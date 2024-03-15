@@ -18,4 +18,8 @@ class DocumentManager{
     private function isYousignV3() : bool {
         return defined('IS_YOUSIGN_V3') && IS_YOUSIGN_V3 == 1;
     }
+
+    private function isNameDevis() : bool {
+      return $this->isYousignV3() &&  $this->pdfStrings['devis'];
+    }
 }
