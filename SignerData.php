@@ -1,3 +1,4 @@
+<?php
 class SignerData {
     private $lastname;
     private $firstname;
@@ -23,3 +24,6 @@ class SignerData {
         );
     }
 }
+
+
+?>

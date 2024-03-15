@@ -1,3 +1,4 @@
+<?php
 class DocumentManager{
     private $pdfStrings = array();
     private $positions = array();
@@ -20,3 +21,5 @@ class DocumentManager{
         );
     }
 }
+
+?>
