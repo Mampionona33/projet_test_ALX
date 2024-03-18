@@ -119,48 +119,68 @@ class DocumentsHandler {
      * @return void
      */
     public function formatDocuments(): void
-    {
-        $isDocumentNameDevis = $this->isNamed("devis");
-        $documentsUploaded = $this->uploadDocuments();
-        if(!$documentsUploaded || $documentsUploaded === true){
-            return ;
-        }
-        $decodedUploadedDocuments = json_decode($documentsUploaded, true);
-        if ($decodedUploadedDocuments === null) {
-            // Gérer l'erreur de décodage JSON
-            return;
-        }
-        $docName = $decodedUploadedDocuments['name'];
-        $docId = $decodedUploadedDocuments['id'];
-
-        $pt_to_mm = 0.352778;
-        $height_paper = round(297 / $pt_to_mm);
-
-        if ($isDocumentNameDevis) {
-            foreach ($this->page_numbers[$docName] as $key => $page) {
-                $x_y_positions = explode(',', $this->positions[$docName][$key]);
-                $x = intval($x_y_positions[0]);
-                $y = $height_paper - intval($x_y_positions[3]); 
-                $width = intval($x_y_positions[2]) - intval($x_y_positions[0]); 
-
-                $this->documents[] = [
-                    "document_id" => $docId,
-                    "type" => "signature",
-                    "page" => $page,
-                    "width" => $width,
-                    "x" => $x,
-                    "y" => $y + 10
-                ];
-
-                $this->documents[] = [
-                    "document_id" => $json['id'],
-                    "type" => "mention",
-                    "mention" => $signerDatas['firstname'] . " " . $signerDatas['lastname'] . " - Bon pour Accord",
-                    "page" => $page,
-                    "x" => $x,
-                    "y" => $y + 40
-                ];
-            }
-        }
+{
+    $documentsUploaded = $this->uploadDocuments();
+    if (!$documentsUploaded || $documentsUploaded === true) {
+        return;
     }
+
+    $decodedUploadedDocuments = $this->decodeUploadedDocuments($documentsUploaded);
+    if ($decodedUploadedDocuments === null) {
+        return;
+    }
+
+    $docName = $decodedUploadedDocuments['name'];
+    $docId = $decodedUploadedDocuments['id'];
+
+    if ($this->isNamed("devis")) {
+        $this->processDevisDocument($docName, $docId);
+    }
+}
+
+private function decodeUploadedDocuments(string $documentsUploaded): ?array
+{
+    return json_decode($documentsUploaded, true);
+}
+
+private function processDevisDocument(string $docName, string $docId): void
+{
+    $pt_to_mm = 0.352778;
+    $height_paper = round(297 / $pt_to_mm);
+
+    foreach ($this->page_numbers[$docName] as $key => $page) {
+        $x_y_positions = explode(',', $this->positions[$docName][$key]);
+        $x = intval($x_y_positions[0]);
+        $y = $height_paper - intval($x_y_positions[3]);
+        $width = intval($x_y_positions[2]) - intval($x_y_positions[0]);
+
+        $this->addSignatureToDocument($docId, $page, $x, $y, $width);
+        $this->addDateMentionToDocument($docId, $page, $x, $y);
+    }
+}
+
+private function addSignatureToDocument(string $docId, int $page, int $x, int $y, int $width): void
+{
+    $this->documents[] = [
+        "document_id" => $docId,
+        "type" => "signature",
+        "page" => $page,
+        "width" => $width,
+        "x" => $x,
+        "y" => $y + 10
+    ];
+}
+
+private function addDateMentionToDocument(string $docId, int $page, int $x, int $y): void
+{
+    $this->documents[] = [
+        "document_id" => $docId,
+        "type" => "mention",
+        "mention" => "%date%",
+        "page" => $page,
+        "x" => $x + 20,
+        "y" => $y - 5
+    ];
+}
+
 }
