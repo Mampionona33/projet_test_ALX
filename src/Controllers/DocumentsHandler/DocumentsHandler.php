@@ -152,7 +152,7 @@ class DocumentsHandler
             "page" => $page,
             "width" => $width,
             "x" => $x,
-            "y" => $y + 10
+            "y" => $y
         ];
     }
 
@@ -192,7 +192,7 @@ class DocumentsHandler
             $y = $height_paper - intval($x_y_positions[3]);
             $width = intval($x_y_positions[2]) - intval($x_y_positions[0]);
 
-            $this->addSignatureToDocument($docId, $page, $x, $y, $width);
+            $this->addSignatureToDocument($docId, $page, $x, $y + 10, $width);
             $this->addDateMentionDateToDocument($docId, $page, $x, $y);
             $this->addSignerMentionToDocument($docId, $page, $x, $y);
         }
@@ -250,14 +250,29 @@ class DocumentsHandler
     }
 
     /**
-     * Ajout mandat spécial le dans le document
-     * @param string|int $docId
-     * @param string $name
-     * @param int $page
-     * @param int $key
+     * This function adds a mandat special le document to the list of documents.
+     * 
+     * It takes in the document ID, name, page number, and a key, which is used to determine
+     * the x and y positions of the mention.
+     * 
+     * The function first adds a signature to the list of documents. The signature is
+     * located at page $page, and has a width and height of 162 and 78 pixels, respectively.
+     * The x and y positions are set to 355 and 664, respectively.
+     * 
+     * After that, the function adds a mention to the list of documents. The mention is
+     * located at the same page as the signature. The x and y positions are determined based
+     * on the key. If the key is 0, the x position is set to 362, and the y position is set
+     * to 570. Otherwise, the x position is set to 318, and the y position is set to 626.
+     * 
+     * @param string|int $docId The ID of the document.
+     * @param string $name The name of the document.
+     * @param int $page The page number of the document.
+     * @param int $key The key used to determine the x and y positions of the mention.
+     * @return void
      */
     private function addMandatSpecialLeToDocument($docId, $name, $page, $key): void
     {
+        // Add a signature to the list of documents
         $this->documents[] = [
             "document_id" => $docId,
             "type" => "signature",
@@ -268,8 +283,12 @@ class DocumentsHandler
             "x" => 355,
             "y" => 664
         ];
+
+        // Determine the x and y positions of the mention based on the key
         $mention_x = ($key == 0) ? 362 : 318;
         $mention_y = ($key == 0) ? 570 : 626;
+
+        // Add a mention to the list of documents
         $this->documents[] = [
             "document_id" => $docId,
             "type" => "mention",
@@ -281,9 +300,9 @@ class DocumentsHandler
     }
 
 
+
     /**
-     * Process the positions of documents
-     * @param string|int $docId
+     * @param string|int $docId The ID of the document.
      * @return void
      */
     private function processDocumentByNamePosition($docId): void
@@ -293,7 +312,7 @@ class DocumentsHandler
         $actions = [];
 
         foreach ($this->pdfStrings as $name => $pdfString) {
-            if ($this->isDocumentPosition($name)) {
+            if (isset($this->page_numbers[$name])) {
                 foreach ($this->page_numbers[$name] as $key => $page) {
                     $x_y_positions = explode(',', $this->positions[$name][$key]);
                     if (is_array($x_y_positions) && count($x_y_positions) >= 4) {
@@ -301,8 +320,14 @@ class DocumentsHandler
                         $y = $height_paper - intval($x_y_positions[3]);
                         $width = intval($x_y_positions[2]) - $x;
 
-                        $actions[] = function () use ($name, $docId, $page, $key, $x, $y) {
-                            if ($this->isDocumentName('mandat_administratif_financier') || $this->isDocumentName('mandat_administratif') || $this->isDocumentName('mandat_financier')) {
+                        // Add the action to the list of actions
+                        $actions[] = function () use ($name, $docId, $page, $key, $x, $y, $width) {
+                            // Check the document type and add it to the list of documents
+                            if (
+                                $this->isDocumentName('mandat_administratif_financier') ||
+                                $this->isDocumentName('mandat_administratif') ||
+                                $this->isDocumentName('mandat_financier')
+                            ) {
                                 $this->addMandatToDocument($name, $docId);
                             } else if ($this->isDocumentName('attestation_tva')) {
                                 $this->addAttestationTvaToDocument($docId, $name, $x, $y);
@@ -311,19 +336,21 @@ class DocumentsHandler
                             } else if ($this->isDocumentName('mandat_special_le')) {
                                 $this->addMandatSpecialLeToDocument($docId, $name, $page, $key);
                             }
+
+                            if (!is_array($this->page_numbers[$name])) {
+                                $this->addSignatureToDocument($docId, $page, $x, $y, $width);
+                            }
                         };
                     }
                 }
             }
         }
 
-        // Exécuter les actions à la fin de la boucle
+        // Execute all the actions
         foreach ($actions as $action) {
             $action();
         }
     }
-
-
 
 
     /**
