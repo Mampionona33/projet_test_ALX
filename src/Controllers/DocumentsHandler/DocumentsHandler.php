@@ -40,7 +40,7 @@ class DocumentsHandler {
      * @param array<string, mixed> $positions
      * @return void
      */
-    public function __construct($pdfStrings, $doc_ids, $page_numbers, $positions)
+    public function __construct($pdfStrings, $doc_ids, $page_numbers, $positions, $signerDatas)
     {
         $this->pdfStrings = $pdfStrings;
         $this->doc_ids = $doc_ids;
@@ -150,6 +150,15 @@ class DocumentsHandler {
                     "width" => $width,
                     "x" => $x,
                     "y" => $y + 10
+                ];
+
+                $this->documents[] = [
+                    "document_id" => $json['id'],
+                    "type" => "mention",
+                    "mention" => $signerDatas['firstname'] . " " . $signerDatas['lastname'] . " - Bon pour Accord",
+                    "page" => $page,
+                    "x" => $x,
+                    "y" => $y + 40
                 ];
             }
         }
