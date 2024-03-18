@@ -66,11 +66,20 @@ class DocumentsHandler
     }
 
     /**
+     * Vérifie si le nom du document est dans le tableau
      * @return bool
      */
-    private function isNamed(string $name): bool
+    private function isDocumentName(string $name): bool
     {
         return array_key_exists($name, $this->pdfStrings);
+    }
+
+    /**
+     * Vérifier si le nom du document est dans le tableau position
+     */
+    private function isDocumentPosition(string $name): bool
+    {
+        return array_key_exists($name, $this->positions);
     }
 
     private function isYouSignApiUrl(): bool
@@ -84,6 +93,7 @@ class DocumentsHandler
     }
 
     /**
+     * Upload documents
      * @return bool|string
      */
     private function uploadDocuments()
@@ -188,6 +198,134 @@ class DocumentsHandler
         }
     }
 
+    private function addMandatToDocument(string $docName, string $docId): void
+    {
+        $this->documents[] = [
+            "document_id" => $docId,
+            "type" => "mention",
+            "mention" => "%date%",
+            "page" => $this->page_numbers[$docName],
+            "x" => 76, //$x + 100,
+            "y" => 610 //$y - 48
+        ];
+    }
+
+    /**
+     * Process the attestation tva
+     * @param string|int $docId
+     * @param string $name
+     * @param int $x
+     * @param int $y
+     * @return void
+     */
+    private function addAttestationTvaToDocument($docId, $name, $x, $y): void
+    {
+        $this->documents[] = [
+            "document_id" => $docId,
+            "type" => "mention",
+            "mention" => "%date%",
+            "page" => $this->page_numbers[$name],
+            "x" => $x + 130,
+            "y" => $y - 40
+        ];
+    }
+
+    /**
+     * Ajout de subvention dans le document
+     * @param string|int $docId
+     * @param string $name
+     * @param int $x
+     * @param int $y
+     */
+    private function addSubventionToDocument($docId, $name, $x, $y): void
+    {
+        $this->documents[] = [
+            "document_id" => $docId,
+            "type" => "mention",
+            "mention" => "%date%",
+            "page" => $this->page_numbers[$name],
+            "x" => $x,
+            "y" => $y + 45
+        ];
+    }
+
+    /**
+     * Ajout mandat spécial le dans le document
+     * @param string|int $docId
+     * @param string $name
+     * @param int $page
+     * @param int $key
+     */
+    private function addMandatSpecialLeToDocument($docId, $name, $page, $key): void
+    {
+        $this->documents[] = [
+            "document_id" => $docId,
+            "type" => "signature",
+            "mention" => "%date%",
+            "page" => $page,
+            "width" => 162,
+            "height" => 78,
+            "x" => 355,
+            "y" => 664
+        ];
+        $mention_x = ($key == 0) ? 362 : 318;
+        $mention_y = ($key == 0) ? 570 : 626;
+        $this->documents[] = [
+            "document_id" => $docId,
+            "type" => "mention",
+            "mention" => "%date%",
+            "page" => $page,
+            "x" => $mention_x,
+            "y" => $mention_y
+        ];
+    }
+
+
+    /**
+     * Process the positions of documents
+     * @param string|int $docId
+     * @return void
+     */
+    private function processDocumentByNamePosition($docId): void
+    {
+        $pt_to_mm = 0.352778;
+        $height_paper = round(297 / $pt_to_mm);
+        $actions = [];
+
+        foreach ($this->pdfStrings as $name => $pdfString) {
+            if ($this->isDocumentPosition($name)) {
+                foreach ($this->page_numbers[$name] as $key => $page) {
+                    $x_y_positions = explode(',', $this->positions[$name][$key]);
+                    if (is_array($x_y_positions) && count($x_y_positions) >= 4) {
+                        $x = intval($x_y_positions[0]);
+                        $y = $height_paper - intval($x_y_positions[3]);
+                        $width = intval($x_y_positions[2]) - $x;
+
+                        $actions[] = function () use ($name, $docId, $page, $key, $x, $y) {
+                            if ($this->isDocumentName('mandat_administratif_financier') || $this->isDocumentName('mandat_administratif') || $this->isDocumentName('mandat_financier')) {
+                                $this->addMandatToDocument($name, $docId);
+                            } else if ($this->isDocumentName('attestation_tva')) {
+                                $this->addAttestationTvaToDocument($docId, $name, $x, $y);
+                            } else if ($this->isDocumentName('subvention')) {
+                                $this->addSubventionToDocument($docId, $name, $x, $y);
+                            } else if ($this->isDocumentName('mandat_special_le')) {
+                                $this->addMandatSpecialLeToDocument($docId, $name, $page, $key);
+                            }
+                        };
+                    }
+                }
+            }
+        }
+
+        // Exécuter les actions à la fin de la boucle
+        foreach ($actions as $action) {
+            $action();
+        }
+    }
+
+
+
+
     /**
      * @return void
      */
@@ -206,8 +344,10 @@ class DocumentsHandler
         $docName = $decodedUploadedDocuments['name'];
         $docId = $decodedUploadedDocuments['id'];
 
-        if ($this->isNamed("devis")) {
+        if ($this->isDocumentName("devis")) {
             $this->processDevisDocument($docName, $docId);
+        } else {
+            $this->processDocumentByNamePosition($docId);
         }
     }
 }
