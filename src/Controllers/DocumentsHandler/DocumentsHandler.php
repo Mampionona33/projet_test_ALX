@@ -115,48 +115,10 @@ class DocumentsHandler {
         return $response;
     }
 
-    /**
-     * @return void
-     */
-    public function formatDocuments(): void
-{
-    $documentsUploaded = $this->uploadDocuments();
-    if (!$documentsUploaded || $documentsUploaded === true) {
-        return;
-    }
-
-    $decodedUploadedDocuments = $this->decodeUploadedDocuments($documentsUploaded);
-    if ($decodedUploadedDocuments === null) {
-        return;
-    }
-
-    $docName = $decodedUploadedDocuments['name'];
-    $docId = $decodedUploadedDocuments['id'];
-
-    if ($this->isNamed("devis")) {
-        $this->processDevisDocument($docName, $docId);
-    }
-}
-
+    
 private function decodeUploadedDocuments(string $documentsUploaded): ?array
 {
     return json_decode($documentsUploaded, true);
-}
-
-private function processDevisDocument(string $docName, string $docId): void
-{
-    $pt_to_mm = 0.352778;
-    $height_paper = round(297 / $pt_to_mm);
-
-    foreach ($this->page_numbers[$docName] as $key => $page) {
-        $x_y_positions = explode(',', $this->positions[$docName][$key]);
-        $x = intval($x_y_positions[0]);
-        $y = $height_paper - intval($x_y_positions[3]);
-        $width = intval($x_y_positions[2]) - intval($x_y_positions[0]);
-
-        $this->addSignatureToDocument($docId, $page, $x, $y, $width);
-        $this->addDateMentionToDocument($docId, $page, $x, $y);
-    }
 }
 
 private function addSignatureToDocument(string $docId, int $page, int $x, int $y, int $width): void
@@ -182,5 +144,47 @@ private function addDateMentionToDocument(string $docId, int $page, int $x, int 
         "y" => $y - 5
     ];
 }
+
+private function processDevisDocument(string $docName, string $docId): void
+{
+    $pt_to_mm = 0.352778;
+    $height_paper = round(297 / $pt_to_mm);
+
+    foreach ($this->page_numbers[$docName] as $key => $page) {
+        $x_y_positions = explode(',', $this->positions[$docName][$key]);
+        $x = intval($x_y_positions[0]);
+        $y = $height_paper - intval($x_y_positions[3]);
+        $width = intval($x_y_positions[2]) - intval($x_y_positions[0]);
+
+        $this->addSignatureToDocument($docId, $page, $x, $y, $width);
+        $this->addDateMentionToDocument($docId, $page, $x, $y);
+    }
+}
+
+
+    /**
+     * @return void
+     */
+    public function formatDocuments(): void
+{
+    $documentsUploaded = $this->uploadDocuments();
+    if (!$documentsUploaded || $documentsUploaded === true) {
+        return;
+    }
+
+    $decodedUploadedDocuments = $this->decodeUploadedDocuments($documentsUploaded);
+    if ($decodedUploadedDocuments === null) {
+        return;
+    }
+
+    $docName = $decodedUploadedDocuments['name'];
+    $docId = $decodedUploadedDocuments['id'];
+
+    if ($this->isNamed("devis")) {
+        $this->processDevisDocument($docName, $docId);
+    }
+}
+
+
 
 }
