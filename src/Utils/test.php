@@ -4,8 +4,9 @@ require_once 'vendor/autoload.php';
 use Utils\Curl;
 use Utils\StringJsonBuilder;
 
-$curl = new Curl('https://httpbin.org/post');
+$curl = new Curl();
 $curl->addOption(array(
+    CURLOPT_URL => 'https://httpbin.org/post',
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_ENCODING => "test",
     CURLOPT_MAXREDIRS => 10,

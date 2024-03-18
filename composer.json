@@ -7,7 +7,8 @@
     "psr-4": {
       "Src\\": "src/",
       "Controllers\\": "src/Controllers/",
-      "Utils\\": "src/Utils"
+      "Utils\\": "src/Utils",
+      "Config\\": "src/Config"
     }
   },
   "authors": [

@@ -15,18 +15,11 @@ class Curl
     private bool $error = false;
 
     /**
-     * @var string
-     */
-    private string $url;
-
-    /**
      * Constructeur de la classe Curl
-     * @param string $url L'URL à utiliser pour les requêtes cURL
      */
-    public function __construct(string $url)
+    public function __construct()
     {
         $this->options = [];
-        $this->url = $url;
     }
 
     /**
@@ -62,7 +55,6 @@ class Curl
     public function execute(): string|bool
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->url);
         curl_setopt_array($ch, $this->options);
         $output = curl_exec($ch);
         $error = curl_error($ch);

@@ -30,6 +30,11 @@ class DocumentsHandler {
     /**
      * @var array<int, mixed>
      */
+    private $signerDatas;
+
+    /**
+     * @var array<int, mixed>
+     */
     private $documents;
 
     /**
@@ -38,6 +43,7 @@ class DocumentsHandler {
      * @param array<string, mixed> $doc_ids
      * @param array<string, mixed> $page_numbers
      * @param array<string, mixed> $positions
+     * @param array<string, mixed> $signerDatas
      * @return void
      */
     public function __construct($pdfStrings, $doc_ids, $page_numbers, $positions, $signerDatas)
@@ -47,6 +53,7 @@ class DocumentsHandler {
         $this->documents = [];
         $this->page_numbers = $page_numbers;
         $this->positions = $positions;
+        $this->signerDatas = $signerDatas
     }
 
     /**
