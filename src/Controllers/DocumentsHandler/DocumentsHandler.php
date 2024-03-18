@@ -53,7 +53,7 @@ class DocumentsHandler {
         $this->documents = [];
         $this->page_numbers = $page_numbers;
         $this->positions = $positions;
-        $this->signerDatas = $signerDatas
+        $this->signerDatas = $signerDatas;
     }
 
     /**
@@ -128,7 +128,7 @@ private function decodeUploadedDocuments(string $documentsUploaded): ?array
     return json_decode($documentsUploaded, true);
 }
 
-private function addSignatureToDocument(string $docId, int $page, int $x, int $y, int $width): void
+private function addSignatureToDocument(string $docId, int $page, float $x, float $y, float $width): void
 {
     $this->documents[] = [
         "document_id" => $docId,
@@ -140,7 +140,7 @@ private function addSignatureToDocument(string $docId, int $page, int $x, int $y
     ];
 }
 
-private function addDateMentionToDocument(string $docId, int $page, int $x, int $y): void
+private function addDateMentionToDocument(string $docId, int $page, float $x, float $y): void
 {
     $this->documents[] = [
         "document_id" => $docId,
