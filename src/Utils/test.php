@@ -5,7 +5,7 @@ use Utils\Curl;
 use Utils\StringJsonBuilder;
 
 $curl = new Curl();
-$curl->addOption(array(
+$curl->setOptions(array(
     CURLOPT_URL => 'https://httpbin.org/post',
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_ENCODING => "test",

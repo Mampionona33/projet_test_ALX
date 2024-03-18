@@ -33,18 +33,18 @@ class Curl
     /**
      * @return array<int, mixed>
      */
-    public function getOpions()
+    public function getOptions()
     {
         return $this->options;
     }
 
     /**
-     * Ajoute une option cURL
-     * @param mixed $option L'option à ajouter
+     * Définit les options cURL
+     * @param array<int, mixed> $options Les options à définir
      */
-    public function addOption($option): void
+    public function setOptions(array $options): void
     {
-        $this->options[] = $option;
+        $this->options = $options;
     }
 
     /**
