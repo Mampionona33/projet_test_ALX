@@ -13,8 +13,6 @@ $curl->setOptions(array(
     CURLOPT_TIMEOUT => 0,
 ));
 
-var_dump($curl->getOpions());
-
 $fields = new StringJsonBuilder();
 $fields->addField('nom', 'test');
 $fields->addField('nom_1', 'test_1');
