@@ -140,7 +140,7 @@ private function addSignatureToDocument(string $docId, int $page, float $x, floa
     ];
 }
 
-private function addDateMentionToDocument(string $docId, int $page, float $x, float $y): void
+private function addDateMentionDateToDocument(string $docId, int $page, float $x, float $y): void
 {
     $this->documents[] = [
         "document_id" => $docId,
@@ -151,6 +151,19 @@ private function addDateMentionToDocument(string $docId, int $page, float $x, fl
         "y" => $y - 5
     ];
 }
+
+private function addSignerMentionToDocument(string $docId, int $page, float $x, float $y): void
+{
+    $this->documents[] = [
+        "document_id" => $docId,
+        "type" => "mention",
+        "mention" => $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " - Bon pour Accord",
+        "page" => $page,
+        "x" => $x,
+        "y" => $y + 40
+    ];
+}
+
 
 private function processDevisDocument(string $docName, string $docId): void
 {
@@ -164,10 +177,10 @@ private function processDevisDocument(string $docName, string $docId): void
         $width = intval($x_y_positions[2]) - intval($x_y_positions[0]);
 
         $this->addSignatureToDocument($docId, $page, $x, $y, $width);
-        $this->addDateMentionToDocument($docId, $page, $x, $y);
+        $this->addDateMentionDateToDocument($docId, $page, $x, $y);
+        $this->addMentionToDocument($docId, $page, $x, $y);
     }
 }
-
 
     /**
      * @return void
