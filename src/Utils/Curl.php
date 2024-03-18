@@ -30,6 +30,31 @@ class Curl
     }
 
     /**
+     * @return bool
+     */
+    public function isError(): bool
+    {
+        return $this->error;
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    public function getOpions()
+    {
+        return $this->options;
+    }
+
+    /**
+     * Ajoute une option cURL
+     * @param mixed $option L'option à ajouter
+     */
+    public function addOption($option): void
+    {
+        $this->options[] = $option;
+    }
+
+    /**
      * Effectue une requête GET en utilisant cURL
      * @throws \Exception En cas d'erreur cURL
      * @return string|bool Le contenu de la réponse ou false en cas d'échec
@@ -55,25 +80,5 @@ class Curl
         return $output;
     }
 
-    public function isError(): bool
-    {
-        return $this->error;
-    }
-
-    /**
-     * @return array<int, mixed>
-     */
-    public function getOpions()
-    {
-        return $this->options;
-    }
-
-    /**
-     * Ajoute une option cURL
-     * @param mixed $option L'option à ajouter
-     */
-    public function addOption($option): void
-    {
-        $this->options[] = $option;
-    }
+   
 }
