@@ -43,7 +43,7 @@ class DocumentsHandler {
      * @param array<string, mixed> $doc_ids
      * @param array<string, mixed> $page_numbers
      * @param array<string, mixed> $positions
-     * @param array<string, mixed> $signerDatas
+     * @param array<int, mixed> $signerDatas
      * @return void
      */
     public function __construct($pdfStrings, $doc_ids, $page_numbers, $positions, $signerDatas)
