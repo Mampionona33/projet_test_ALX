@@ -4,6 +4,7 @@ namespace Controllers\DocumentsHandler;
 
 use Utils\Curl;
 use Utils\CURLStringFile;
+use Utils\StringJsonBuilder;
 
 class DocumentsHandler
 {
@@ -37,6 +38,11 @@ class DocumentsHandler
      * @var array<int, mixed>
      */
     private $documents;
+
+    /**
+     * @var string
+     */
+    private $procedure_finished_email;
 
     /**
      * DocumentsHandler constructor.
@@ -180,7 +186,16 @@ class DocumentsHandler
         ];
     }
 
-    private function addBonPourAccordToDocument(string $name, string $key, int $page, string $fileId, array $positions) : void {
+    /**
+     * Ajoute le bon pour accord au document
+     * @param string $name
+     * @param string $key
+     * @param int $page
+     * @param string $fileId
+     * @param array<string, mixed> $positions
+     * @return void
+     */
+    private function addBonPourAccordToDocument( $name,  $key,  $page,  $fileId, $positions) {
         $this->documents[] = [
             "mention" => "{date.fr}",
             "mention2" => $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " - Bon pour Accord",
@@ -419,4 +434,50 @@ class DocumentsHandler
             $this->processDocumentByNamePosition($docId);
         }
     }
+
+    private function buildProcedureFinishedEmail(): string {
+        // Création d'une instance de StringJsonBuilder
+        $procedure_finished_email_json = new StringJsonBuilder();
+    
+        // Vérifier si les emails de suivi des dossiers sont définis et valides
+        if (defined('EMAILS_SUIVI_DOSSIERS') && is_array(EMAILS_SUIVI_DOSSIERS) && !empty(EMAILS_SUIVI_DOSSIERS) && !in_array("", EMAILS_SUIVI_DOSSIERS)) {
+            // Création de l'e-mail de notification pour les dossiers de suivi
+            $subject = "[YOUSIGN] " . $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " vient de signer les documents.";
+            $message = $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " (" . $this->signerDatas['phone'] . ") vient de signer les documents. Cliquez ici pour y accéder : <tag data-tag-type=\"button\" data-tag-name=\"url\" data-tag-title=\"Accéder aux documents\">Accéder aux documents</tag><br><br>Très cordialement,<br>" . SOCIETE . ".";
+            $destinataires = json_decode(EMAILS_SUIVI_DOSSIERS);
+
+            $procedure_finished_email_json->addField("subject", $subject);
+            $procedure_finished_email_json->addField("message", $message);
+            $procedure_finished_email_json->addField("to", $destinataires);
+        }
+    
+        // Création de l'e-mail de notification pour le membre
+        $subject_member = "Documents signés avec succès !";
+        $message_member = "Bonjour <tag data-tag-type=\"string\" data-tag-name=\"recipient.firstname\"></tag> <tag data-tag-type=\"string\" data-tag-name=\"recipient.lastname\"></tag>, <br><br> Vos documents ont bien été signés électroniquement. Cliquez ici pour y accéder : <tag data-tag-type=\"button\" data-tag-name=\"url\" data-tag-title=\"Accéder aux documents\">Accéder aux documents</tag><br><br>Très cordialement,<br>" . SOCIETE . ".";
+        
+        $procedure_finished_email_json->addField("subject", $subject_member);
+        $procedure_finished_email_json->addField("message", $message_member);
+        $procedure_finished_email_json->addField("to", ["@member"]);
+    
+        // Construction de la chaîne JSON finale
+        return $procedure_finished_email_json->build();
+    }
+    
+
+    private function buildMembersArb(array $signerDatas, array $documents): string {
+        $members_arb_json = new StringJsonBuilder();
+
+        // Construire les données JSON pour le membre
+        $members_arb_json->addField("firstname", $this->signerDatas['firstname']);
+        $members_arb_json->addField("lastname", $this->signerDatas['lastname']);
+        $members_arb_json->addField("email", $this->signerDatas['email']);
+        $members_arb_json->addField("phone", $this->signerDatas['phone']);
+        $members_arb_json->addField("fileObjects", $this->documents); 
+    
+        // Retourner la chaîne JSON finale pour le membre
+        return $members_arb_json->build();
+    }
+    
+    
+    
 }
