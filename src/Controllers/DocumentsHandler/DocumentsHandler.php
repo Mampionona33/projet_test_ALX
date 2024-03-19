@@ -45,15 +45,37 @@ class DocumentsHandler
     private $procedure_finished_email;
 
     /**
+     * @var string
+     */
+    private $ex_date;
+
+    /**
+     * @var string | int
+     */
+    private $devis_id;
+
+    /**
+     * @var array<int |string>
+     */
+    private $documents_ids;
+
+    /**
+     * @var string
+     */
+    private $webhook_url;
+
+    /**
      * DocumentsHandler constructor.
      * @param array<string, mixed> $pdfStrings
      * @param array<string, mixed> $doc_ids
      * @param array<string, mixed> $page_numbers
      * @param array<string, mixed> $positions
      * @param array<string, mixed> $signerDatas
+     * @param string $ex_date
+     * @param string $devis_id
      * @return void
      */
-    public function __construct($pdfStrings, $doc_ids, $page_numbers, $positions, $signerDatas)
+    public function __construct($pdfStrings, $doc_ids, $page_numbers, $positions, $signerDatas, $ex_date, $devis_id)
     {
         $this->pdfStrings = $pdfStrings;
         $this->doc_ids = $doc_ids;
@@ -61,6 +83,9 @@ class DocumentsHandler
         $this->page_numbers = $page_numbers;
         $this->positions = $positions;
         $this->signerDatas = $signerDatas;
+        $this->ex_date = $ex_date ?? '';
+        $this->devis_id = $devis_id;
+        $this->webhook_url = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/webhook_yousign.php";
     }
 
     /**
@@ -195,7 +220,8 @@ class DocumentsHandler
      * @param array<string, mixed> $positions
      * @return void
      */
-    private function addBonPourAccordToDocument( $name,  $key,  $page,  $fileId, $positions) {
+    private function addBonPourAccordToDocument($name,  $key,  $page,  $fileId, $positions)
+    {
         $this->documents[] = [
             "mention" => "{date.fr}",
             "mention2" => $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " - Bon pour Accord",
@@ -276,20 +302,6 @@ class DocumentsHandler
     }
 
     /**
-     * Cette fonction ajoute un mandat spécial au document à la liste des documents.
-     * 
-     * Elle prend en entrée l'ID du document, le nom, le numéro de page et une clé, qui est utilisée pour déterminer
-     * les positions x et y de la mention.
-     * 
-     * La fonction ajoute d'abord une signature à la liste des documents. La signature se trouve
-     * à la page $page, et a une largeur et une hauteur de 162 et 78 pixels, respectivement.
-     * Les positions x et y sont définies à 355 et 664, respectivement.
-     * 
-     * Ensuite, la fonction ajoute une mention à la liste des documents. La mention se trouve
-     * à la même page que la signature. Les positions x et y sont déterminées en fonction
-     * de la clé. Si la clé est 0, la position x est définie à 362, et la position y est définie à
-     * 570. Sinon, la position x est définie à 318, et la position y est définie à 626.
-     * 
      * @param string|int $docId The ID of the document.
      * @param string $name The name of the document.
      * @param int $page The page number of the document.
@@ -325,7 +337,8 @@ class DocumentsHandler
         ];
     }
 
-    private function addFilesToDocument(string $name, int $key, int $page, int|string $fileId ) : void {
+    private function addFilesToDocument(string $name, int $key, int $page, int|string $fileId): void
+    {
         $this->documents[] = [
             "mention" => "{date.fr}",
             "position" => $this->positions[$name][$key],
@@ -334,14 +347,15 @@ class DocumentsHandler
         ];
     }
 
-  /**
-   * Ajoute une mention à la liste des documents.
-   * @param string $name Le nom du document.
-   * @param int $key La clé de la mention.
-   * @param int $page Le numéro de page.
-   * @param int|string $fileId L'ID du fichier
-   */
-    private function addListTravauxPreconisesToDocument( $name, $key, $page, $fileId) : void {
+    /**
+     * Ajoute une mention à la liste des documents.
+     * @param string $name Le nom du document.
+     * @param int $key La clé de la mention.
+     * @param int $page Le numéro de page.
+     * @param int|string $fileId L'ID du fichier
+     */
+    private function addListTravauxPreconisesToDocument($name, $key, $page, $fileId): void
+    {
         $this->documents[] = [
             "mention" => "{date.fr}",
             "mention2" => $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'],
@@ -385,13 +399,14 @@ class DocumentsHandler
                                 $this->addSubventionToDocument($docId, $name, $x, $y);
                             } else if ($this->isDocumentName('mandat_special_le')) {
                                 $this->addMandatSpecialLeToDocument($docId, $name, $page, $key);
-                            }else if($this->isDocumentName('list_travaux_preconises')) {
+                            } else if ($this->isDocumentName('list_travaux_preconises')) {
                                 $this->addListTravauxPreconisesToDocument($name, $key, $page, $docId);
-                            }else if( $this->isDocumentName('amo') || $this->isDocumentName('doc_leader') || 
-                            $this->isDocumentName('mandat_sibel1') || $this->isDocumentName('mandat_sibel2') ||
-                            $this->isDocumentName('mandat_sibel3') || $this->isDocumentName('doc_planitis') ||
-                            $this->isDocumentName('procuration') 
-                            ){
+                            } else if (
+                                $this->isDocumentName('amo') || $this->isDocumentName('doc_leader') ||
+                                $this->isDocumentName('mandat_sibel1') || $this->isDocumentName('mandat_sibel2') ||
+                                $this->isDocumentName('mandat_sibel3') || $this->isDocumentName('doc_planitis') ||
+                                $this->isDocumentName('procuration')
+                            ) {
                                 $this->addFilesToDocument($name, $key, $page, $docId);
                             }
 
@@ -410,37 +425,15 @@ class DocumentsHandler
         }
     }
 
-    /**
-     * @return void
-     */
-    public function formatDocuments(): void
+
+
+    private function buildProcedureFinishedEmail(): string|bool
     {
-        $documentsUploaded = $this->uploadDocuments();
-        if (!$documentsUploaded || $documentsUploaded === true) {
-            return;
-        }
-
-        $decodedUploadedDocuments = $this->decodeUploadedDocuments($documentsUploaded);
-        if ($decodedUploadedDocuments === null) {
-            return;
-        }
-
-        $docName = $decodedUploadedDocuments['name'];
-        $docId = $decodedUploadedDocuments['id'];
-
-        if ($this->isDocumentName("devis")) {
-            $this->processDevisDocument($docName, $docId);
-        } else {
-            $this->processDocumentByNamePosition($docId);
-        }
-    }
-
-    private function buildProcedureFinishedEmail(): string|bool {
         // Création d'une instance de StringJsonBuilder
         $procedure_finished_email_json = new StringJsonBuilder();
-    
+
         // Vérifier si les emails de suivi des dossiers sont définis et valides
-        if (defined('EMAILS_SUIVI_DOSSIERS') && is_array(EMAILS_SUIVI_DOSSIERS) && !empty(EMAILS_SUIVI_DOSSIERS) && !in_array("", EMAILS_SUIVI_DOSSIERS)) {
+        if (defined('EMAILS_SUIVI_DOSSIERS') && is_array(EMAILS_SUIVI_DOSSIERS) && !empty(EMAILS_SUIVI_DOSSIERS)) {
             // Création de l'e-mail de notification pour les dossiers de suivi
             $subject = "[YOUSIGN] " . $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " vient de signer les documents.";
             $message = $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " (" . $this->signerDatas['phone'] . ") vient de signer les documents. Cliquez ici pour y accéder : <tag data-tag-type=\"button\" data-tag-name=\"url\" data-tag-title=\"Accéder aux documents\">Accéder aux documents</tag><br><br>Très cordialement,<br>" . SOCIETE . ".";
@@ -450,25 +443,24 @@ class DocumentsHandler
             $procedure_finished_email_json->addField("message", $message);
             $procedure_finished_email_json->addField("to", $destinataires);
         }
-    
+
         // Création de l'e-mail de notification pour le membre
         $subject_member = "Documents signés avec succès !";
         $message_member = "Bonjour <tag data-tag-type=\"string\" data-tag-name=\"recipient.firstname\"></tag> <tag data-tag-type=\"string\" data-tag-name=\"recipient.lastname\"></tag>, <br><br> Vos documents ont bien été signés électroniquement. Cliquez ici pour y accéder : <tag data-tag-type=\"button\" data-tag-name=\"url\" data-tag-title=\"Accéder aux documents\">Accéder aux documents</tag><br><br>Très cordialement,<br>" . SOCIETE . ".";
-        
+
         $procedure_finished_email_json->addField("subject", $subject_member);
         $procedure_finished_email_json->addField("message", $message_member);
         $procedure_finished_email_json->addField("to", ["@member"]);
-    
+
         // Construction de la chaîne JSON finale
         return $procedure_finished_email_json->build();
     }
 
     /**
-     * @param array<array<string, string>>  $signerDatas
-     * @param array<array<string, string>>  $documents
      * @return string|bool
      */
-    private function buildMembersArb( $signerDatas, $documents): string|bool {
+    private function buildMembersArb(): string|bool
+    {
         $members_arb_json = new StringJsonBuilder();
 
         // Construire les données JSON pour le membre
@@ -476,10 +468,201 @@ class DocumentsHandler
         $members_arb_json->addField("lastname", $this->signerDatas['lastname']);
         $members_arb_json->addField("email", $this->signerDatas['email']);
         $members_arb_json->addField("phone", $this->signerDatas['phone']);
-        $members_arb_json->addField("fileObjects", $this->documents); 
-    
+        $members_arb_json->addField("fileObjects", $this->documents);
+
         // Retourner la chaîne JSON finale pour le membre
         return $members_arb_json->build();
     }
-    
+
+    private function createSignaturePostRequest(): string|bool
+    {
+        $postRequset = new StringJsonBuilder();
+        $expire_at = $this->ex_date ?
+            '"expiration_date": "' . $this->ex_date . '",' : "";
+        $signers = [
+            [
+                "info" => [
+                    "first_name" => $this->signerDatas['firstname'],
+                    "last_name" => $this->signerDatas['lastname'],
+                    "email" => $this->signerDatas['email'],
+                    "phone_number" => $this->signerDatas['phone'],
+                    "locale" => "fr"
+                ],
+                "signature_level" => "electronic_signature",
+                "signature_authentication_mode" => "otp_sms",
+                "custom_text" => [
+                    "request_subject" => "Vous êtes invité à signer vos documents",
+                    "request_body" => "Veuillez signer les documents suivants.",
+                    "reminder_subject" => "Rappel : Vous n'avez pas encore signé vos documents.",
+                    "reminder_body" => "Veuillez signer les documents suivants."
+                ],
+                "fields" => json_encode($this->documents)
+            ]
+        ];
+
+        $postRequset->addField("name", "Liste des documents a signer par le client");
+        $postRequset->addField("delivery_mode", "none");
+        $postRequset->addField("external_id", "DEVIS_'.$this->devis_id.'");
+        $postRequset->addField("timezone", "Europe/Paris");
+        $postRequset->addField("email_custom_note", "Veuillez signer les documents suivants.");
+        $postRequset->addField("email_custom_note", "Veuillez signer les documents suivants. ," . $expire_at);
+        $postRequset->addField("documents", json_encode($this->documents_ids));
+        $postRequset->addField("signers", $signers);
+
+
+        return $postRequset->build();
+    }
+
+    private function createProcedurePostRequset(): string|bool
+    {
+        $postRequest = new StringJsonBuilder();
+        $expires_at = $this->ex_date ? '"expiresAt": "' . $this->ex_date . '",' : "";
+        $config = [
+            "email" => [
+                "procedure.finished" => [$this->procedure_finished_email]
+            ],
+            "webhook" => [
+                "procedure.started" => [
+                    [
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => [
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Started"
+                        ]
+                    ]
+                ],
+                "procedure.finished" => [
+                    [
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => [
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Finished"
+                        ]
+                    ]
+                ],
+                "procedure.refused" => [
+                    [
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => [
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Refused"
+                        ]
+                    ]
+                ],
+                "procedure.expired" => [
+                    [
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => [
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Expired"
+                        ]
+                    ]
+                ],
+                "procedure.deleted" => [
+                    [
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => [
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Deleted"
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+
+        $postRequest->addField("name", "Documents a signer");
+        $postRequest->addField(
+            "description",
+            "Liste des documents a signer par le client" .
+                $expires_at
+        );
+        $postRequest->addField("start", true);
+        $postRequest->addField("members", $this->buildMembersArb());
+        $postRequest->addField("operationLevel", "advanced");
+        $postRequest->addField("config", json_encode($config));
+
+        return $postRequest->build();
+    }
+
+
+    private function getSignatures(): string |bool
+    {
+        $signatureCurl = new Curl();
+        $options = [
+            CURLOPT_URL => 'https://' . YOUSIGN_API_URL . '/signature_requests',
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POSTFIELDS => $this->createSignaturePostRequest(),
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer " . YOUSIGN_API_KEY,
+                "Content-Type: application/json"
+            )
+        ];
+        $signatureCurl->setOptions($options);
+        return $signatureCurl->execute();
+    }
+
+    private function getProcedure(): string |bool
+    {
+        $procedureCurl = new Curl();
+        $options = [
+            CURLOPT_URL => 'https://' . YOUSIGN_API_URL . "/procedures",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => $this->createProcedurePostRequset()
+        ];
+        $procedureCurl->setOptions($options);
+        return $procedureCurl->execute();
+    }
+
+    /**
+     * @return void
+     */
+    public function formatDocuments(): void
+    {
+
+        foreach ($this->pdfStrings as $name => $pdfString) {
+            $documentsUploaded = $this->uploadDocuments();
+            if (!$documentsUploaded || $documentsUploaded === true) {
+                return;
+            }
+
+            $decodedUploadedDocuments = $this->decodeUploadedDocuments($documentsUploaded);
+            if ($decodedUploadedDocuments === null) {
+                return;
+            }
+
+            if (defined('IS_YOUSIGN_V3') && IS_YOUSIGN_V3 === 1) {
+
+                $docName = $decodedUploadedDocuments['name'];
+                $docId = $decodedUploadedDocuments['id'];
+                $this->documents_ids[] = $docId;
+
+                if ($this->isDocumentName("devis")) {
+                    $this->processDevisDocument($docName, $docId);
+                } else {
+                    $this->processDocumentByNamePosition($docId);
+                }
+            }
+        }
+    }
+
+
+    private function createProcedure(): string | bool
+    {
+        if (defined('IS_YOUSIGN_V3') && IS_YOUSIGN_V3 === 1) {
+            return $this->getSignatures();
+        }
+        return $this->getProcedure();
+    }
+
+    private function sendDocForSigning(): string | bool
+    {
+    }
 }
