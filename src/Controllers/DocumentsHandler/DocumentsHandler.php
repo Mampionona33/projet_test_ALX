@@ -29,7 +29,7 @@ class DocumentsHandler
     private $positions;
 
     /**
-     * @var array<int, mixed>
+     * @var array<string, mixed>
      */
     private $signerDatas;
 
@@ -44,7 +44,7 @@ class DocumentsHandler
      * @param array<string, mixed> $doc_ids
      * @param array<string, mixed> $page_numbers
      * @param array<string, mixed> $positions
-     * @param array<int, mixed> $signerDatas
+     * @param array<string, mixed> $signerDatas
      * @return void
      */
     public function __construct($pdfStrings, $doc_ids, $page_numbers, $positions, $signerDatas)
@@ -144,7 +144,7 @@ class DocumentsHandler
         return json_decode($documentsUploaded, true);
     }
 
-    private function addSignatureToDocument(string $docId, int $page, float $x, float $y, float $width): void
+    private function addSignatureToDocument(int|string $docId, int $page, float $x, float $y, float $width): void
     {
         $this->documents[] = [
             "document_id" => $docId,
@@ -180,6 +180,16 @@ class DocumentsHandler
         ];
     }
 
+    private function addBonPourAccordToDocument(string $name, string $key, int $page, string $fileId, array $positions) : void {
+        $this->documents[] = [
+            "mention" => "{date.fr}",
+            "mention2" => $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " - Bon pour Accord",
+            "position" => $positions[$name][$key],
+            "page" => $page,
+            "file" => $fileId
+        ];
+    }
+
 
     private function processDevisDocument(string $docName, string $docId): void
     {
@@ -195,10 +205,11 @@ class DocumentsHandler
             $this->addSignatureToDocument($docId, $page, $x, $y + 10, $width);
             $this->addDateMentionDateToDocument($docId, $page, $x, $y);
             $this->addSignerMentionToDocument($docId, $page, $x, $y);
+            $this->addBonPourAccordToDocument($docName, $key, $page, $docId, $this->positions);
         }
     }
 
-    private function addMandatToDocument(string $docName, string $docId): void
+    private function addMandatToDocument(string $docName, int|string $docId): void
     {
         $this->documents[] = [
             "document_id" => $docId,
@@ -214,8 +225,8 @@ class DocumentsHandler
      * Process the attestation tva
      * @param string|int $docId
      * @param string $name
-     * @param int $x
-     * @param int $y
+     * @param float $x
+     * @param float $y
      * @return void
      */
     private function addAttestationTvaToDocument($docId, $name, $x, $y): void
@@ -234,8 +245,8 @@ class DocumentsHandler
      * Ajout de subvention dans le document
      * @param string|int $docId
      * @param string $name
-     * @param int $x
-     * @param int $y
+     * @param float $x
+     * @param float $y
      */
     private function addSubventionToDocument($docId, $name, $x, $y): void
     {
