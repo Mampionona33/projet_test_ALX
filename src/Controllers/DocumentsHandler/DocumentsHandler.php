@@ -435,7 +435,7 @@ class DocumentsHandler
         }
     }
 
-    private function buildProcedureFinishedEmail(): string {
+    private function buildProcedureFinishedEmail(): string|bool {
         // Création d'une instance de StringJsonBuilder
         $procedure_finished_email_json = new StringJsonBuilder();
     
@@ -462,9 +462,13 @@ class DocumentsHandler
         // Construction de la chaîne JSON finale
         return $procedure_finished_email_json->build();
     }
-    
 
-    private function buildMembersArb(array $signerDatas, array $documents): string {
+    /**
+     * @param array<array<string, string>>  $signerDatas
+     * @param array<array<string, string>>  $documents
+     * @return string|bool
+     */
+    private function buildMembersArb( $signerDatas, $documents): string|bool {
         $members_arb_json = new StringJsonBuilder();
 
         // Construire les données JSON pour le membre
@@ -477,7 +481,5 @@ class DocumentsHandler
         // Retourner la chaîne JSON finale pour le membre
         return $members_arb_json->build();
     }
-    
-    
     
 }
