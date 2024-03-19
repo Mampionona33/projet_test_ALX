@@ -374,7 +374,8 @@ class DocumentsHandler
                                 $this->addListTravauxPreconisesToDocument($name, $key, $page, $docId);
                             }else if( $this->isDocumentName('amo') || $this->isDocumentName('doc_leader') || 
                             $this->isDocumentName('mandat_sibel1') || $this->isDocumentName('mandat_sibel2') ||
-                            $this->isDocumentName('mandat_sibel3') || $this->isDocumentName('doc_planitis') 
+                            $this->isDocumentName('mandat_sibel3') || $this->isDocumentName('doc_planitis') ||
+                            $this->isDocumentName('procuration') 
                             ){
                                 $this->addFilesToDocument($name, $key, $page, $docId);
                             }
