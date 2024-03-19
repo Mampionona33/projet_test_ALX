@@ -250,19 +250,19 @@ class DocumentsHandler
     }
 
     /**
-     * This function adds a mandat special le document to the list of documents.
+     * Cette fonction ajoute un mandat spécial au document à la liste des documents.
      * 
-     * It takes in the document ID, name, page number, and a key, which is used to determine
-     * the x and y positions of the mention.
+     * Elle prend en entrée l'ID du document, le nom, le numéro de page et une clé, qui est utilisée pour déterminer
+     * les positions x et y de la mention.
      * 
-     * The function first adds a signature to the list of documents. The signature is
-     * located at page $page, and has a width and height of 162 and 78 pixels, respectively.
-     * The x and y positions are set to 355 and 664, respectively.
+     * La fonction ajoute d'abord une signature à la liste des documents. La signature se trouve
+     * à la page $page, et a une largeur et une hauteur de 162 et 78 pixels, respectivement.
+     * Les positions x et y sont définies à 355 et 664, respectivement.
      * 
-     * After that, the function adds a mention to the list of documents. The mention is
-     * located at the same page as the signature. The x and y positions are determined based
-     * on the key. If the key is 0, the x position is set to 362, and the y position is set
-     * to 570. Otherwise, the x position is set to 318, and the y position is set to 626.
+     * Ensuite, la fonction ajoute une mention à la liste des documents. La mention se trouve
+     * à la même page que la signature. Les positions x et y sont déterminées en fonction
+     * de la clé. Si la clé est 0, la position x est définie à 362, et la position y est définie à
+     * 570. Sinon, la position x est définie à 318, et la position y est définie à 626.
      * 
      * @param string|int $docId The ID of the document.
      * @param string $name The name of the document.
