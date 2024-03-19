@@ -317,7 +317,7 @@ function send_document_for_signing($pdfStrings, $doc_ids, $signerDatas, $page_nu
                       "file" => $json['id']
                   ];
               }
-          } else if($name == "procuration") {
+          } else if($name == " ") {
               foreach ($page_numbers[$name] as $key => $page) {
                   $documents[] = [
                       "mention" => "{date.fr}",

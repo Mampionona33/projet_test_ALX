@@ -310,6 +310,15 @@ class DocumentsHandler
         ];
     }
 
+    private function addFilesToDocument(string $name, int $key, int $page, int|string $fileId ) : void {
+        $this->documents[] = [
+            "mention" => "{date.fr}",
+            "position" => $this->positions[$name][$key],
+            "page" => $page,
+            "file" => $fileId
+        ];
+    }
+
   /**
    * Ajoute une mention à la liste des documents.
    * @param string $name Le nom du document.
@@ -363,6 +372,11 @@ class DocumentsHandler
                                 $this->addMandatSpecialLeToDocument($docId, $name, $page, $key);
                             }else if($this->isDocumentName('list_travaux_preconises')) {
                                 $this->addListTravauxPreconisesToDocument($name, $key, $page, $docId);
+                            }else if( $this->isDocumentName('amo') || $this->isDocumentName('doc_leader') || 
+                            $this->isDocumentName('mandat_sibel1') || $this->isDocumentName('mandat_sibel2') ||
+                            $this->isDocumentName('mandat_sibel3') || $this->isDocumentName('doc_planitis') 
+                            ){
+                                $this->addFilesToDocument($name, $key, $page, $docId);
                             }
 
                             if (!is_array($this->page_numbers[$name])) {
