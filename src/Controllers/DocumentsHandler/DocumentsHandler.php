@@ -310,7 +310,22 @@ class DocumentsHandler
         ];
     }
 
-
+  /**
+   * Ajoute une mention à la liste des documents.
+   * @param string $name Le nom du document.
+   * @param int $key La clé de la mention.
+   * @param int $page Le numéro de page.
+   * @param int|string $fileId L'ID du fichier
+   */
+    private function addListTravauxPreconisesToDocument( $name, $key, $page, $fileId) : void {
+        $this->documents[] = [
+            "mention" => "{date.fr}",
+            "mention2" => $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'],
+            "position" => $this->positions[$name][$key],
+            "page" => $page,
+            "file" => $fileId
+        ];
+    }
 
     /**
      * @param string|int $docId The ID of the document.
@@ -346,6 +361,8 @@ class DocumentsHandler
                                 $this->addSubventionToDocument($docId, $name, $x, $y);
                             } else if ($this->isDocumentName('mandat_special_le')) {
                                 $this->addMandatSpecialLeToDocument($docId, $name, $page, $key);
+                            }else if($this->isDocumentName('list_travaux_preconises')) {
+                                $this->addListTravauxPreconisesToDocument($name, $key, $page, $docId);
                             }
 
                             if (!is_array($this->page_numbers[$name])) {
@@ -362,7 +379,6 @@ class DocumentsHandler
             $action();
         }
     }
-
 
     /**
      * @return void
