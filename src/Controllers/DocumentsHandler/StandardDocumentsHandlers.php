@@ -215,16 +215,43 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
 
 
 
-    private function createSignatureProcedure($documentsIds)
+    protected function createSignatureProcedure()
     {
-        // Logique de création de la procédure de signature
-        // Retourne l'identifiant de la procédure créée
     }
 
     /**
-     * @return bool|string
+     * @param string $procedureId
+     * @return string|bool
+     * @throws \Exception
      */
-    private function activateSignatureProcedure($procedureId)
+    protected function activateSignatureProcedure($procedureId)
     {
+        $json = json_decode($procedureId, true);
+
+        $curl = curl_init();
+
+        if (!isset($json['id'])) {
+            throw new \Exception("Impossible de créer la procédure de signature. Erreur #:" . $procedureId);
+        }
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://' . YOUSIGN_API_URL . '/signature_requests/' . $json['id'] . '/activate',
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer " . YOUSIGN_API_KEY
+            )
+        ));
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            throw new \Exception("cURL Error #:" . $err);
+        } else {
+            return $response;
+        }
     }
 }
