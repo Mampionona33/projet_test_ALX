@@ -285,7 +285,7 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
 
     /**
      * @return string
-     * @throws Exception
+     * @throws \Exception
      */
     private function createPostFieldSignatureProcedure()
     {
@@ -333,7 +333,7 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
 
     /**
      * @return string
-     * @throws Exception
+     * @throws \Exception
      */
     private function createPostFieldListDocumentsAsigner(): string
     {
@@ -411,8 +411,6 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         return $jsonString;
     }
 
-
-
     private function isYousignV3(): bool
     {
         return defined('IS_YOUSIGN_V3') && IS_YOUSIGN_V3 === 1;
@@ -466,7 +464,6 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
 
         return $response;
     }
-
 
     /**
      * @param string $procedureId
