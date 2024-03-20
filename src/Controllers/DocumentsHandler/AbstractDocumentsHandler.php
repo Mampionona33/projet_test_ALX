@@ -16,10 +16,10 @@ abstract class AbstractDocumentsHandler
     abstract protected function sendDocumentsToAPI($preparedData);
 
     /**
-     * @param array<string, mixed> $documentsIds
-     * @return string
+     * @return string|bool
+     * @throws \Exception
      */
-    abstract protected function createSignatureProcedure(array $documentsIds);
+    abstract protected function createSignatureProcedure();
 
     /**
      * @param string $procedureId

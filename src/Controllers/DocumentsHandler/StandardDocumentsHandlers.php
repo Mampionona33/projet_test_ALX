@@ -38,7 +38,7 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
     private $ex_date;
 
     /**
-     * @var array<string, mixed> $devis_id
+     * @var string $devis_id
      */
     private $devis_id;
 
@@ -58,6 +58,21 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
     private $fileUrl;
 
     /**
+     * @var array<string, mixed> $documents_ids
+     */
+    private $documents_ids;
+
+    /**
+     * @var array<string, mixed> $documents
+     */
+    private $documents;
+
+    /**
+     * @var string $webhook_url
+     */
+    private $webhook_url;
+
+    /**
      * DocumentsHandler constructor.
      * @param array<string, mixed> $pdfStrings
      * @param array<string, mixed> $doc_ids
@@ -65,7 +80,7 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
      * @param array<string, mixed> $page_numbers
      * @param array<string, mixed> $positions
      * @param array<string, mixed> $ex_date
-     * @param array<string, mixed> $devis_id
+     * @param string $devis_id
      * @param array<string, mixed> $signer_types
      * @return void
      */
@@ -79,6 +94,9 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         $this->ex_date = $ex_date;
         $this->devis_id = $devis_id;
         $this->signer_types = $signer_types;
+        $this->documents_ids = [];
+        $this->documents = [];
+        $this->webhook_url = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/webhook_yousign.php";
     }
     public function sendForSigning(): string|bool
     {
@@ -87,6 +105,16 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         $procedureId = $this->createSignatureProcedure($documentsIds);
         $activationResult = $this->activateSignatureProcedure($procedureId);
         return $activationResult;
+    }
+
+    public function setWebhookUrl(string $webhook_url): void
+    {
+        $this->webhook_url = $webhook_url;
+    }
+
+    public function getWebhookUrl(): string
+    {
+        return $this->webhook_url;
     }
 
 
@@ -213,11 +241,232 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         return $documentsIds;
     }
 
+    /**
+     * Crée le tableau des membres à envoyer à l'API de signature.
+     *
+     * @return string Le JSON représentant les membres
+     */
+    protected function createMembersArb(): string
+    {
+        $members_arb = '{
+            "firstname": "' . $this->signerDatas['firstname'] . '",
+            "lastname": "' . $this->signerDatas['lastname'] . '",
+            "email": "' . $this->signerDatas['email'] . '",
+            "phone": "' . $this->signerDatas['phone'] . '",
+            "fileObjects": ' . json_encode($this->documents) . '
+        }';
+
+        return $members_arb;
+    }
+
+    /**
+     * @return string
+     */
+    protected function createProcedureFinishedEmail(): string
+    {
+        $procedure_finished_email = '';
+
+        if (defined('EMAILS_SUIVI_DOSSIERS') && is_array(EMAILS_SUIVI_DOSSIERS) && !empty(EMAILS_SUIVI_DOSSIERS) && !in_array("", EMAILS_SUIVI_DOSSIERS)) {
+            $procedure_finished_email .= '{
+            "subject": "[YOUSIGN] ' . $this->signerDatas['firstname'] . ' ' . $this->signerDatas['lastname'] . ' viens de signer les documents.",
+            "message": "' . $this->signerDatas['firstname'] . ' ' . $this->signerDatas['lastname'] . ' (' . $this->signerDatas['phone'] . ') viens de signer les documents. Cliquez ici pour y accéder : <tag data-tag-type=\"button\" data-tag-name=\"url\" data-tag-title=\"Accèder aux documents\">Accèder aux documents</tag><br><br>Très cordialement,<br>' . SOCIETE . '.",
+            "to": ' . json_encode(EMAILS_SUIVI_DOSSIERS) . '
+        },';
+        }
+
+        $procedure_finished_email .= '{
+        "subject": "Documents signés avec succès !",
+        "message": "Bonjour <tag data-tag-type=\"string\" data-tag-name=\"recipient.firstname\"></tag> <tag data-tag-type=\"string\" data-tag-name=\"recipient.lastname\"></tag>, <br><br> Vos documents ont bien été signés électroniquement. Cliquez ici pour y accéder : <tag data-tag-type=\"button\" data-tag-name=\"url\" data-tag-title=\"Accèder aux documents\">Accèder aux documents</tag><br><br>Très cordialement,<br>' . SOCIETE . '.",
+        "to": ["@member"]
+    }';
+
+        return $procedure_finished_email;
+    }
+
+    /**
+     * @return string
+     * @throws Exception
+     */
+    private function createPostFieldSignatureProcedure()
+    {
+        $expires_at = $this->ex_date ? $this->ex_date : null;
+
+        $postData = array(
+            "name" => "Liste des documents à signer par le client",
+            "delivery_mode" => "none",
+            "external_id" => "DEVIS_" . $this->devis_id,
+            "timezone" => "Europe/Paris",
+            "email_custom_note" => "Veuillez signer les documents suivants.",
+            "expiration_date" => $expires_at,
+            "documents" => json_encode($this->documents_ids),
+            "signers" => array(
+                array(
+                    "info" => array(
+                        "first_name" => $this->signerDatas['firstname'],
+                        "last_name" => $this->signerDatas['lastname'],
+                        "email" => $this->signerDatas['email'],
+                        "phone_number" => $this->signerDatas['phone'],
+                        "locale" => "fr"
+                    ),
+                    "signature_level" => "electronic_signature",
+                    "signature_authentication_mode" => "otp_sms",
+                    "custom_text" => array(
+                        "request_subject" => "Vous êtes invité à signer vos documents",
+                        "request_body" => "Veuillez signer les documents suivants.",
+                        "reminder_subject" => "Rappel : Vous n'avez pas encore signé vos documents.",
+                        "reminder_body" => "Veuillez signer les documents suivants."
+                    ),
+                    "fields" => json_encode($this->documents)
+                )
+            )
+        );
 
 
+        $jsonString = json_encode($postData);
+
+        if ($jsonString === false) {
+            throw new \Exception("Failed to encode JSON");
+        }
+
+        return $jsonString;
+    }
+
+    /**
+     * @return string
+     * @throws Exception
+     */
+    private function createPostFieldListDocumentsAsigner(): string
+    {
+
+        $expires_at = $this->ex_date ? $this->ex_date : null;
+
+        $postData = array(
+            "name" => "Documents à signer",
+            "description" => "Liste des documents à signer par le client",
+            "expiresAt" => $expires_at,
+            "start" => true,
+            "members" => $this->createMembersArb(),
+            "operationLevel" => "advanced",
+            "config" => array(
+                "email" => array(
+                    "procedure.finished" => array($this->createProcedureFinishedEmail())
+                )
+            ),
+            "webhook" => array(
+                "procedure.started" => array(
+                    array(
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => array(
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Started"
+                        )
+                    )
+                ),
+                "procedure.finished" => array(
+                    array(
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => array(
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Finished"
+                        )
+                    )
+                ),
+                "procedure.refused" => array(
+                    array(
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => array(
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Refused"
+                        )
+                    )
+                ),
+                "procedure.expired" => array(
+                    array(
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => array(
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Expired"
+                        )
+                    )
+                ),
+                "procedure.deleted" => array(
+                    array(
+                        "url" => $this->webhook_url,
+                        "method" => "GET",
+                        "headers" => array(
+                            "X-Yousign-Custom-Header" => "Yousign Webhook - Procedure Deleted"
+                        )
+                    )
+                )
+            )
+        );
+
+
+        $jsonString = json_encode($postData);
+
+        if ($jsonString === false) {
+            throw new \Exception("Failed to encode JSON");
+        }
+
+        return $jsonString;
+    }
+
+
+
+    private function isYousignV3(): bool
+    {
+        return defined('IS_YOUSIGN_V3') && IS_YOUSIGN_V3 === 1;
+    }
+
+    /**
+     * @return string|bool
+     * @throws \Exception
+     */
     protected function createSignatureProcedure()
     {
+        $curl = curl_init();
+        if ($this->isYousignV3()) {
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://' . YOUSIGN_API_URL . '/signature_requests',
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => array(
+                    "Authorization: Bearer " . YOUSIGN_API_KEY,
+                    "Content-Type: application/json"
+                ),
+                CURLOPT_POSTFIELDS => $this->createPostFieldSignatureProcedure(),
+            ));
+        } else {
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://' . YOUSIGN_API_URL . "/procedures",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => $this->createPostFieldListDocumentsAsigner(),
+                CURLOPT_HTTPHEADER => array(
+                    "Authorization: Bearer " . YOUSIGN_API_KEY,
+                    "Content-Type: application/json"
+                )
+            ));
+        }
+
+        $response = curl_exec($curl);
+
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            throw new \Exception("cURL Error #:" . $err);
+        }
+
+        return $response;
     }
+
 
     /**
      * @param string $procedureId
