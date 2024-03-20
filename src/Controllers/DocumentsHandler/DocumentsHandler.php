@@ -105,13 +105,13 @@ class DocumentsHandler
         return array_key_exists($name, $this->pdfStrings);
     }
 
-    /**
-     * Vérifier si le nom du document est dans le tableau position
-     */
-    private function isDocumentPosition(string $name): bool
-    {
-        return array_key_exists($name, $this->positions);
-    }
+    // /**
+    //  * Vérifier si le nom du document est dans le tableau position
+    //  */
+    // private function isDocumentPosition(string $name): bool
+    // {
+    //     return array_key_exists($name, $this->positions);
+    // }
 
     private function isYouSignApiUrl(): bool
     {
@@ -660,9 +660,5 @@ class DocumentsHandler
             return $this->getSignatures();
         }
         return $this->getProcedure();
-    }
-
-    private function sendDocForSigning(): string | bool
-    {
     }
 }
