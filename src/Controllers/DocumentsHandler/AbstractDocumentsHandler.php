@@ -11,12 +11,12 @@ abstract class AbstractDocumentsHandler
 
     /**
      * @param array<int, array<string, mixed>> $preparedData
-     * @return array<int|string, string|string> Les identifiants des documents créés
+     * @return void
      */
-    abstract protected function sendDocumentsToAPI($preparedData);
+    abstract protected function getDocumentIds($preparedData);
 
     /**
-     * @return string|bool
+     * @return string
      * @throws \Exception
      */
     abstract protected function createSignatureProcedure();

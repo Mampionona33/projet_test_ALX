@@ -58,7 +58,7 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
     private $fileUrl;
 
     /**
-     * @var array<string, mixed> $documents_ids
+     * @var array<int|string, mixed> $documents_ids
      */
     private $documents_ids;
 
@@ -98,13 +98,15 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         $this->documents = [];
         $this->webhook_url = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/webhook_yousign.php";
     }
-    public function sendForSigning(): string|bool
+
+    public function setDoumentUrl(string $url): void
     {
-        $preparedData = $this->prepareDocumentData();
-        $documentsIds = $this->sendDocumentsToAPI($preparedData);
-        $procedureId = $this->createSignatureProcedure($documentsIds);
-        $activationResult = $this->activateSignatureProcedure($procedureId);
-        return $activationResult;
+        $this->documentUrl = $url;
+    }
+
+    public function setFileUrl(): void
+    {
+        $this->fileUrl = $this->fileUrl;
     }
 
     public function setWebhookUrl(string $webhook_url): void
@@ -138,16 +140,6 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
             ];
         }
         return $preparedData;
-    }
-
-    public function setDoumentUrl(string $url): void
-    {
-        $this->documentUrl = $url;
-    }
-
-    public function setFileUrl(): void
-    {
-        $this->fileUrl = $this->fileUrl;
     }
 
     /**
@@ -222,11 +214,11 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
 
     /**
      * @param array<int, array<string, mixed>> $preparedData
-     * @return array<int|string, bool|string> Les identifiants des documents créés
+     * @return void
      */
-    protected function sendDocumentsToAPI($preparedData)
+    protected function getDocumentIds($preparedData)
     {
-        $documentsIds = [];
+        $this->documents_ids = [];
 
         foreach ($preparedData as $name => $documentData) {
             $pdfString = $documentData['pdf_string'];
@@ -235,10 +227,8 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
 
             $documentId = $this->sendDocumentToAPI($pdfString, $docId, $name);
 
-            $documentsIds[$docId] = $documentId;
+            $this->documents_ids[$docId] = $documentId;
         }
-
-        return $documentsIds;
     }
 
     /**
@@ -417,10 +407,10 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
     }
 
     /**
-     * @return string|bool
+     * @return string
      * @throws \Exception
      */
-    protected function createSignatureProcedure()
+    protected function createSignatureProcedure(): string
     {
         $curl = curl_init();
         if ($this->isYousignV3()) {
@@ -453,7 +443,6 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         }
 
         $response = curl_exec($curl);
-
         $err = curl_error($curl);
 
         curl_close($curl);
@@ -462,7 +451,11 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
             throw new \Exception("cURL Error #:" . $err);
         }
 
-        return $response;
+        if (is_string($response)) {
+            return $response;
+        } else {
+            throw new \Exception("Failed to create signature procedure");
+        }
     }
 
     /**
@@ -499,5 +492,16 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         } else {
             return $response;
         }
+    }
+
+    public function sendForSigning(): string|bool
+    {
+        $preparedData = $this->prepareDocumentData();
+        $this->getDocumentIds($preparedData);
+        $procedureId = $this->createSignatureProcedure();
+
+        $activationResult = $this->activateSignatureProcedure($procedureId);
+
+        return $activationResult;
     }
 }
