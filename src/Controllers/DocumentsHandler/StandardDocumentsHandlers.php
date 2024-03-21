@@ -63,7 +63,7 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
     private $documents_ids;
 
     /**
-     * @var array<string, mixed> $documents
+     * @var array<string|int, mixed> $documents
      */
     private $documents;
 
@@ -105,42 +105,217 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
     }
 
     /**
-     * Méthode pour envoyer les documents à signer à YouSign
+     * @param string $name
+     * @param string $pdfString
+     * @return array<string, mixed>
      * @throws \Exception
      */
-    public function sendDocumentsForSigning(array $pdfStrings, array $docIds, array $pageNumbers, array $positions, array $signerDatas): void
+    protected function sendFileToYousign($name, $pdfString): array
     {
-        foreach ($pdfStrings as $name => $pdfString) {
-            // Initialisation de cURL
-            $curl = curl_init();
+        $curl = curl_init();
 
-            // Configuration des options cURL
-            // ...
+        if (defined('IS_YOUSIGN_V3') && IS_YOUSIGN_V3 === 1) {
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://' . YOUSIGN_API_URL . '/documents',
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POSTFIELDS =>  array(
+                    'file' => new CURLStringFile($pdfString, $name . '-' . $this->doc_ids[$name] . '.pdf', 'application/pdf'),
+                    'nature' => 'signable_document'
+                ),
+                CURLOPT_HTTPHEADER => array(
+                    "Authorization: Bearer " . YOUSIGN_API_KEY
+                ),
+            ));
+        } else {
+            $base64FileContent =  base64_encode($pdfString);
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://' . YOUSIGN_API_URL . "/files",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => json_encode(array(
+                    "name" => $name . "-" . $this->doc_ids[$name] . ".pdf",
+                    "content" => $base64FileContent
+                )),
+                CURLOPT_HTTPHEADER => array(
+                    "Authorization: Bearer " . YOUSIGN_API_KEY,
+                    "Content-Type: application/json"
+                ),
+            ));
+        }
 
-            // Exécution de la requête
-            $response = curl_exec($curl);
-            $err = curl_error($curl);
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
 
-            curl_close($curl);
+        curl_close($curl);
 
-            if ($err) {
-                throw new \Exception("error" . $err);
+        if ($err) {
+            throw new \Exception("Impossible d'envoyer le fichier à Yousign. Erreur #:" . $err);
+        }
+
+        if ($response === false) {
+            throw new \Exception("La requête d'envoi de fichier à Yousign a échoué.");
+        }
+        if ($response === true) {
+            throw new \Exception("La requête d'envoi de fichier à Yousign a échoué.");
+        }
+
+        return json_decode($response, true);
+    }
+
+
+    /**
+     * @param array<string, mixed> $json
+     * @param string $name
+     * @return void
+     * @throws \Exception
+     */
+    protected function populateDocuments($name, $json): void
+    {
+        if (defined('IS_YOUSIGN_V3') && IS_YOUSIGN_V3 === 1) {
+            $pt_to_mm = 0.352778;
+            $height_paper = round(297 / $pt_to_mm);
+            $width_paper = round(210 / $pt_to_mm);
+            $this->documents_ids[] = $json['id'];
+            if ($name == 'devis') {
+                $this->documents[] = [
+                    'id' => $json['id'],
+                    'url' => $json['url'],
+                    'width' => $width_paper,
+                    'height' => $height_paper
+                ];
             }
-
-
-
-            $json = json_decode($response, true);
-
-            // Ajout de l'identifiant du document à la liste des documentsIds
-            $this->documentsIds[] = $json['id'];
-
-            // Vérification du nom du document
+        } else {
+            $pt_to_mm = 0.352778;
+            $height_paper = round(297 / $pt_to_mm);
+            $width_paper = round(210 / $pt_to_mm);
+            $documents_ids[] = $json['id'];
             if ($name == "devis") {
-                // Traitement spécifique pour le document "devis"
-                // ...
+                foreach ($this->page_numbers[$name] as $key => $page) {
+                    $x_y_positions = explode(',', $this->positions[$name][$key]);
+                    $x = intval($x_y_positions[0]);
+                    $y = $height_paper - intval($x_y_positions[3]);
+                    $width = intval($x_y_positions[2]) - $x;
+                    $documents[] = [
+                        "document_id" => $json['id'],
+                        "type" => "signature",
+                        "page" => $page,
+                        "width" => $width,
+                        "x" => $x,
+                        "y" => $y + 10
+                    ];
+                    $documents[] = [
+                        "document_id" => $json['id'],
+                        "type" => "mention",
+                        "mention" => "%date%",
+                        "page" => $page,
+                        "x" => $x + 20,
+                        "y" => $y - 5
+                    ];
+                    $documents[] = [
+                        "document_id" => $json['id'],
+                        "type" => "mention",
+                        "mention" => $this->signerDatas['firstname'] . " " . $this->signerDatas['lastname'] . " - Bon pour Accord",
+                        "page" => $page,
+                        "x" => $x,
+                        "y" => $y + 40
+                    ];
+                }
             } else {
-                // Autres traitements pour les autres types de documents
-                // ...
+                if (isset($this->positions[$name])) {
+                    $x_y_positions = explode(',', $this->positions[$name]);
+                    if (is_array($x_y_positions) && count($x_y_positions) >= 4) {
+                        $x = intval($x_y_positions[0]);
+                        $y = $height_paper - intval($x_y_positions[3]);
+                        $width = intval($x_y_positions[2]) - $x;
+                    } else {
+                        $x = null;
+                        $y = null;
+                        $width = null;
+                    }
+
+                    if ($name == "mandat_administratif_financier" || $name == "mandat_administratif" || $name == "mandat_financier") {
+                        $documents[] = [
+                            "document_id" => $json['id'],
+                            "type" => "mention",
+                            "mention" => "%date%",
+                            "page" => $this->page_numbers[$name],
+                            "x" => 76,
+                            "y" => 610
+                        ];
+                    } else if ($name == 'attestation_tva') {
+                        $documents[] = [
+                            "document_id" => $json['id'],
+                            "type" => "mention",
+                            "mention" => "%date%",
+                            "page" => $this->page_numbers[$name],
+                            "x" => $x + 130,
+                            "y" => $y - 40
+                        ];
+                    } else if ($name == "subvention") {
+                        $documents[] = [
+                            "document_id" => $json['id'],
+                            "type" => "mention",
+                            "mention" => "%date%",
+                            "page" => $this->page_numbers[$name],
+                            "x" => $x,
+                            "y" => $y + 45
+                        ];
+                    } else if ($name == "mandat_special_le") {
+                        foreach ($this->page_numbers[$name] as $key => $page) {
+                            $documents[] = [
+                                "document_id" => $json['id'],
+                                "type" => "signature",
+                                "page" => $page,
+                                "width" => 162,
+                                "height" => 78,
+                                "x" => 355,
+                                "y" => 664
+                            ];
+                            if ($key == 0) {
+                                $mention_x = 362;
+                                $mention_y = 570;
+                            } else {
+                                $mention_x = 318;
+                                $mention_y = 626;
+                            }
+                            $documents[] = [
+                                "document_id" => $json['id'],
+                                "type" => "mention",
+                                "mention" => "%date%",
+                                "page" => $page,
+                                "x" => $mention_x,
+                                "y" => $mention_y
+                            ];
+                        }
+                    }
+
+                    if (!is_array($this->page_numbers[$name])) {
+                        $documents[] = [
+                            "document_id" => $json['id'],
+                            "type" => "signature",
+                            "page" => $this->page_numbers[$name],
+                            "width" => $width,
+                            "x" => $x,
+                            "y" => $y
+                        ];
+                    }
+                }
+            }
+        }
+    }
+
+    private function processPdfStrings(): void
+    {
+        foreach ($this->pdfStrings as $name => $pdfString) {
+            $json = $this->sendFileToYousign($name, $pdfString);
+            if ($json) {
+                $this->populateDocuments($name, $json);
             }
         }
     }
@@ -253,24 +428,24 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         }
     }
 
-    /**
-     * @param array<int, array<string, mixed>> $preparedData
-     * @return void
-     */
-    protected function getDocumentIds($preparedData)
-    {
-        $this->documents_ids = [];
+    // /**
+    //  * @param array<int, array<string, mixed>> $preparedData
+    //  * @return void
+    //  */
+    // protected function getDocumentIds($preparedData)
+    // {
+    //     $this->documents_ids = [];
 
-        foreach ($preparedData as $name => $documentData) {
-            $pdfString = $documentData['pdf_string'];
-            $docId = $documentData['doc_id'];
-            $name = $documentData['name'];
+    //     foreach ($preparedData as $name => $documentData) {
+    //         $pdfString = $documentData['pdf_string'];
+    //         $docId = $documentData['doc_id'];
+    //         $name = $documentData['name'];
 
-            $documentId = $this->sendDocumentToAPI($pdfString, $docId, $name);
+    //         $documentId = $this->sendDocumentToAPI($pdfString, $docId, $name);
 
-            $this->documents_ids[$docId] = $documentId;
-        }
-    }
+    //         $this->documents_ids[$docId] = $documentId;
+    //     }
+    // }
 
     /**
      * Crée le tableau des membres à envoyer à l'API de signature.
@@ -539,8 +714,9 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
 
     public function sendForSigning(): string|bool
     {
-        $preparedData = $this->prepareDocumentData();
-        $this->getDocumentIds($preparedData);
+
+        $this->processPdfStrings();
+
         $procedureId = $this->createSignatureProcedure();
 
         $activationResult = $this->activateSignatureProcedure($procedureId);
