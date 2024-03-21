@@ -9,12 +9,6 @@ abstract class AbstractDocumentsHandler
      */
     // abstract protected function prepareDocumentData();
 
-    // /**
-    //  * @param array<int, array<string, mixed>> $preparedData
-    //  * @return void
-    //  */
-    // abstract protected function getDocumentIds($preparedData);
-
     /**
      * @return string
      * @throws \Exception
