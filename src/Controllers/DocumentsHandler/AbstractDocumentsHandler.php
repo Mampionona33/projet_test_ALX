@@ -7,7 +7,7 @@ abstract class AbstractDocumentsHandler
     /**
      * @return array<int, array<string, mixed>>
      */
-    abstract protected function prepareDocumentData();
+    // abstract protected function prepareDocumentData();
 
     // /**
     //  * @param array<int, array<string, mixed>> $preparedData
