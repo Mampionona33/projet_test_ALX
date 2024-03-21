@@ -256,7 +256,9 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
     {
         $procedure_finished_email = '';
 
-        if (defined('EMAILS_SUIVI_DOSSIERS') && is_array(EMAILS_SUIVI_DOSSIERS) && !empty(EMAILS_SUIVI_DOSSIERS) && !in_array("", EMAILS_SUIVI_DOSSIERS)) {
+
+        // @phpstan-ignore-next-line
+        if (defined('EMAILS_SUIVI_DOSSIERS') && is_array(EMAILS_SUIVI_DOSSIERS) && !empty(EMAILS_SUIVI_DOSSIERS)) {
             $procedure_finished_email .= '{
             "subject": "[YOUSIGN] ' . $this->signerDatas['firstname'] . ' ' . $this->signerDatas['lastname'] . ' viens de signer les documents.",
             "message": "' . $this->signerDatas['firstname'] . ' ' . $this->signerDatas['lastname'] . ' (' . $this->signerDatas['phone'] . ') viens de signer les documents. Cliquez ici pour y accéder : <tag data-tag-type=\"button\" data-tag-name=\"url\" data-tag-title=\"Accèder aux documents\">Accèder aux documents</tag><br><br>Très cordialement,<br>' . SOCIETE . '.",
