@@ -104,6 +104,47 @@ class StandardDocumentsHandlers extends AbstractDocumentsHandler
         $this->documentUrl = $url;
     }
 
+    /**
+     * Méthode pour envoyer les documents à signer à YouSign
+     * @throws \Exception
+     */
+    public function sendDocumentsForSigning(array $pdfStrings, array $docIds, array $pageNumbers, array $positions, array $signerDatas): void
+    {
+        foreach ($pdfStrings as $name => $pdfString) {
+            // Initialisation de cURL
+            $curl = curl_init();
+
+            // Configuration des options cURL
+            // ...
+
+            // Exécution de la requête
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+
+            curl_close($curl);
+
+            if ($err) {
+                throw new \Exception("error" . $err);
+            }
+
+
+
+            $json = json_decode($response, true);
+
+            // Ajout de l'identifiant du document à la liste des documentsIds
+            $this->documentsIds[] = $json['id'];
+
+            // Vérification du nom du document
+            if ($name == "devis") {
+                // Traitement spécifique pour le document "devis"
+                // ...
+            } else {
+                // Autres traitements pour les autres types de documents
+                // ...
+            }
+        }
+    }
+
     public function setFileUrl(): void
     {
         $this->fileUrl = $this->fileUrl;
