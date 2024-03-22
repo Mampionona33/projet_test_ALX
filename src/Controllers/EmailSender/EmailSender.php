@@ -61,6 +61,16 @@ class EmailSender extends AbstractEmailSender
      */
     private $mandatString;
 
+    /**
+     * @var string
+     */
+    private $devis_date_req;
+
+    /**
+     * @var int|null
+     */
+    private $num_mpr2;
+
     public function __construct(string $sender_email, string $recipients, string $path)
     {
         $this->sender_email = $sender_email;
@@ -72,6 +82,23 @@ class EmailSender extends AbstractEmailSender
         $this->mandatString_administratif = 0;
         $this->mandatString_financier = 0;
         $this->mandatString = 0;
+        $this->devis_date_req = date('Y-m-d H:i:s');
+        $this->num_mpr2 = null;
+    }
+
+    public function setNum_mpr2(int $num_mpr2): void
+    {
+        $this->num_mpr2 = $num_mpr2;
+    }
+
+    public function setSender_email(string $sender_email): void
+    {
+        $this->sender_email = $sender_email;
+    }
+
+    public function getSender_email(): string
+    {
+        return $this->sender_email;
     }
 
     public function setMandatString_administratif_financier(int $mandatString_administratif_financier): void
@@ -153,6 +180,52 @@ class EmailSender extends AbstractEmailSender
     }
 
 
+    private function configureAttachments(): void
+    {
+        // Attachments
+        $date_format = "d/m/Y H:i:s";
+        $devis_date_c = DateTime::createFromFormat("Y-m-d H:i:s", $this->devis_date_req);
+        $t1  = DateTime::createFromFormat($date_format, "01/05/2010 00:00:00");
+
+        if ($devis_date_c < $t1) {
+            if ($this->mandatString_administratif_financier) {
+                $this->email->addStringAttachment($this->mandatString_administratif_financier, 'mandat-administratif-financier.pdf');
+            } else {
+                if ($this->mandatString_administratif) {
+                    $this->email->addStringAttachment($this->mandatString_administratif, 'mandat-administratif.pdf');
+                }
+                if ($this->mandatString_financier) {
+                    $this->email->addStringAttachment($this->mandatString_financier, 'mandat-financier.pdf');
+                }
+            }
+        } else {
+            if ($this->num_mpr2 != NULL) {
+                $this->email->addStringAttachment($this->attestationConsentementString, 'Attestation_de_consentement.pdf');
+
+                if ($mandatString_administratif_financier) {
+                    $email->addStringAttachment($mandatString_administratif_financier, 'mandat-administratif-financier.pdf');
+                } else {
+                    if ($mandatString_administratif) {
+                        $email->addStringAttachment($mandatString_administratif, 'mandat-administratif.pdf');
+                    }
+                    if ($mandatString_financier) {
+                        $email->addStringAttachment($mandatString_financier, 'mandat-financier.pdf');
+                    }
+                }
+            }
+        }
+
+        // Add more attachment configurations as needed...
+
+        if (strpos($path, 'asc2') == true) {
+            $email->addStringAttachment($pdfString, 'bon_commande.pdf');
+        } else {
+            $email->addStringAttachment($pdfString, 'devis.pdf');
+        }
+    }
+
+
+
     private function configureEmail(): void
     {
         $this->email = new PHPMailer();
@@ -161,6 +234,7 @@ class EmailSender extends AbstractEmailSender
             $this->configureSettings();
             $this->configureRecipients();
             $this->confgureHiddenRecipients();
+            $this->configureAttachments();
             //code...
         } catch (\Throwable $th) {
             //throw $th;
