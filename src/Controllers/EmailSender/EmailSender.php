@@ -43,17 +43,17 @@ class EmailSender extends AbstractEmailSender
     /**
      * @var int
      */
-    private $mandatString_administratif_financier;
+    private $mandatStringAdministratifFinancier;
 
     /**
      * @var int
      */
-    private $mandatString_administratif;
+    private $mandatStringAdministratif;
 
     /**
      * @var int
      */
-    private $mandatString_financier;
+    private $mandatStringFinancier;
 
 
     /**
@@ -64,12 +64,43 @@ class EmailSender extends AbstractEmailSender
     /**
      * @var string
      */
-    private $devis_date_req;
+    private $devisDateRequest;
 
     /**
      * @var int|null
      */
-    private $num_mpr2;
+    private $numMpr2;
+
+    /**
+     * @var string|null
+     */
+    private $attestationConsentementString;
+
+    /**
+     * @var string|null
+     */
+    private $procurationString;
+
+    /**
+     * @var string|null
+     */
+    private $lettreDevisString;
+
+    /**
+     * @var bool
+     */
+    private $isSubvention;
+
+    /**
+     * @var string|null
+     */
+    private $subventionString;
+
+    /**
+     * @var string|null
+     */
+    private $nomSubvention;
+
 
     public function __construct(string $sender_email, string $recipients, string $path)
     {
@@ -78,17 +109,83 @@ class EmailSender extends AbstractEmailSender
         $this->path = $path;
         $this->need_copy_mail = false;
         $this->real_sender_email = null;
-        $this->mandatString_administratif_financier = 0;
-        $this->mandatString_administratif = 0;
-        $this->mandatString_financier = 0;
+        $this->mandatStringAdministratifFinancier = 0;
+        $this->mandatStringAdministratif = 0;
+        $this->mandatStringFinancier = 0;
         $this->mandatString = 0;
-        $this->devis_date_req = date('Y-m-d H:i:s');
-        $this->num_mpr2 = null;
+        $this->devisDateRequest = date('Y-m-d H:i:s');
+        $this->numMpr2 = null;
+        $this->attestationConsentementString = null;
+        $this->procurationString = null;
+        $this->lettreDevisString = null;
+        $this->isSubvention = false;
+        $this->subventionString = null;
+        $this->nomSubvention = null;
     }
 
-    public function setNum_mpr2(int $num_mpr2): void
+    public function setNomSubvention(string $sender_nom): void
     {
-        $this->num_mpr2 = $num_mpr2;
+        $this->nomSubvention = $sender_nom;
+    }
+
+    public function getNomSubvention(): string|null
+    {
+        return $this->nomSubvention;
+    }
+
+    public function setSubventionString(string $subventionString): void
+    {
+        $this->subventionString = $subventionString;
+    }
+
+    public function getSubventionString(): string|null
+    {
+        return $this->subventionString;
+    }
+
+    public function setIsSubvention(bool $isSubvention): void
+    {
+        $this->isSubvention = $isSubvention;
+    }
+
+    public function getIsSubvention(): bool
+    {
+        return $this->isSubvention;
+    }
+
+    public function setLettreDevisString(string $lettreDevisString): void
+    {
+        $this->lettreDevisString = $lettreDevisString;
+    }
+
+    public function getLettreDevisString(): string|null
+    {
+        return $this->lettreDevisString;
+    }
+
+    public function setnumMpr2(int $numMpr2): void
+    {
+        $this->numMpr2 = $numMpr2;
+    }
+
+    public function setProcurationString(string $procurationString): void
+    {
+        $this->procurationString = $procurationString;
+    }
+
+    public function getProcurationString(): string|null
+    {
+        return $this->procurationString;
+    }
+
+    public function setAttestationConsentementString(string $attestationConsentementString): void
+    {
+        $this->attestationConsentementString = $attestationConsentementString;
+    }
+
+    public function getAttestationConsentementString(): string|null
+    {
+        return $this->attestationConsentementString;
     }
 
     public function setSender_email(string $sender_email): void
@@ -101,34 +198,34 @@ class EmailSender extends AbstractEmailSender
         return $this->sender_email;
     }
 
-    public function setMandatString_administratif_financier(int $mandatString_administratif_financier): void
+    public function setmandatStringAdministratifFinancier(int $mandatStringAdministratifFinancier): void
     {
-        $this->mandatString_administratif_financier = $mandatString_administratif_financier;
+        $this->mandatStringAdministratifFinancier = $mandatStringAdministratifFinancier;
     }
 
-    public function getMandatString_administratif_financier(): int
+    public function getmandatStringAdministratifFinancier(): int
     {
-        return $this->mandatString_administratif_financier;
+        return $this->mandatStringAdministratifFinancier;
     }
 
-    public function setMandatString_administratif(int $mandatString_administratif): void
+    public function setMandatString_administratif(int $mandatStringAdministratif): void
     {
-        $this->mandatString_administratif = $mandatString_administratif;
+        $this->mandatStringAdministratif = $mandatStringAdministratif;
     }
 
     public function getMandatString_administratif(): int
     {
-        return $this->mandatString_administratif;
+        return $this->mandatStringAdministratif;
     }
 
-    public function setMandatString_financier(int $mandatString_financier): void
+    public function setMandatString_financier(int $mandatStringFinancier): void
     {
-        $this->mandatString_financier = $mandatString_financier;
+        $this->mandatStringFinancier = $mandatStringFinancier;
     }
 
     public function getMandatString_financier(): int
     {
-        return $this->mandatString_financier;
+        return $this->mandatStringFinancier;
     }
 
     private function configureSettings(): void
@@ -158,20 +255,31 @@ class EmailSender extends AbstractEmailSender
         $this->email->addAddress($this->recipient_email);
     }
 
+    private function shouldAddEmailBcc(): bool
+    {
+        return strpos($this->path, 'agir-ecologie') === false || strpos($this->path, 'leader-energie') === false;
+    }
+
+    private function shouldAddRealSenderEmailToBcc(): bool
+    {
+        return $this->need_copy_mail && $this->real_sender_email && isset($_SESSION['user_power']) && ($_SESSION['user_power'] >= 50);
+    }
+
+
     private function confgureHiddenRecipients(): void
     {
-        if (strpos($this->path, 'leader-energie') === false || strpos($this->path, 'agir-ecologie') === false) {
+        if ($this->shouldAddEmailBcc()) {
             $this->email->AddBcc(EMAIL);
         }
 
-        if ($this->need_copy_mail && $this->real_sender_email && isset($_SESSION['user_power']) && ($_SESSION['user_power'] >= 50)) {
+        if ($this->shouldAddRealSenderEmailToBcc()) {
             $this->email->AddBcc($this->real_sender_email);
         }
 
         if (
-            $this->mandatString_administratif_financier === 0
-            && $this->mandatString_administratif === 0
-            && $this->mandatString_financier === 0
+            $this->mandatStringAdministratifFinancier === 0
+            && $this->mandatStringAdministratif === 0
+            && $this->mandatStringFinancier === 0
         ) {
             $this->mandatString = 0;
         } else {
@@ -179,52 +287,68 @@ class EmailSender extends AbstractEmailSender
         }
     }
 
-
     private function configureAttachments(): void
     {
-        // Attachments
-        $date_format = "d/m/Y H:i:s";
-        $devis_date_c = DateTime::createFromFormat("Y-m-d H:i:s", $this->devis_date_req);
-        $t1  = DateTime::createFromFormat($date_format, "01/05/2010 00:00:00");
+        $devisDate = DateTime::createFromFormat("Y-m-d H:i:s", $this->devisDateRequest);
+        $cutoffDate = DateTime::createFromFormat("d/m/Y H:i:s", "01/05/2010 00:00:00");
 
-        if ($devis_date_c < $t1) {
-            if ($this->mandatString_administratif_financier) {
-                $this->email->addStringAttachment($this->mandatString_administratif_financier, 'mandat-administratif-financier.pdf');
-            } else {
-                if ($this->mandatString_administratif) {
-                    $this->email->addStringAttachment($this->mandatString_administratif, 'mandat-administratif.pdf');
-                }
-                if ($this->mandatString_financier) {
-                    $this->email->addStringAttachment($this->mandatString_financier, 'mandat-financier.pdf');
-                }
-            }
+        if ($devisDate < $cutoffDate) {
+            $this->attachMandatIfPresent($this->mandatStringAdministratifFinancier, 'mandat-administratif-financier.pdf');
+            $this->attachMandatIfPresent($this->mandatStringAdministratif, 'mandat-administratif.pdf');
+            $this->attachMandatIfPresent($this->mandatStringFinancier, 'mandat-financier.pdf');
+        } elseif ($this->numMpr2 !== null) {
+            $this->email->addStringAttachment($this->attestationConsentementString, 'Attestation_de_consentement.pdf');
+            $this->attachMandatIfPresent($this->mandatStringAdministratifFinancier, 'mandat-administratif-financier.pdf');
+            $this->attachMandatIfPresent($this->mandatStringAdministratif, 'mandat-administratif.pdf');
+            $this->attachMandatIfPresent($this->mandatStringFinancier, 'mandat-financier.pdf');
+        }
+
+        strpos($this->path, 'futurenv') ? $this->attachMandatIfPresent($this->procurationString, 'Procuration.pdf') : null;
+
+        if ($this->isSubvention) {
+            $this->attachProcuringMandatIfPathContains('ghe', $this->subventionString, 'lettre_fond_solidarite.pdf');
+            $this->attachProcuringMandatIfPathContains('doovision', $this->subventionString, 'confirmation-des-aides.pdf');
+            $this->attachProcuringMandatIfPathContains('efe', $this->subventionString, 'lettre_confirmation_devis.pdf');
+            $this->attachSubventionIfPathDoesNotContain;
         } else {
-            if ($this->num_mpr2 != NULL) {
-                $this->email->addStringAttachment($this->attestationConsentementString, 'Attestation_de_consentement.pdf');
+            // strpos($this->path, 'efe') ? $this->attachMandatIfPresent($this->lettreDevisString, 'lettre_confirmation_devis.pdf') : null;
+        }
+    }
 
-                if ($mandatString_administratif_financier) {
-                    $email->addStringAttachment($mandatString_administratif_financier, 'mandat-administratif-financier.pdf');
-                } else {
-                    if ($mandatString_administratif) {
-                        $email->addStringAttachment($mandatString_administratif, 'mandat-administratif.pdf');
-                    }
-                    if ($mandatString_financier) {
-                        $email->addStringAttachment($mandatString_financier, 'mandat-financier.pdf');
-                    }
-                }
+    /**
+     * Undocumented function
+     * @param array<string, mixed> $fileName
+     * @return void
+     */
+    private function attachSubventionIfPathDoesNotContain(array $fileName): void
+    {
+        $found = false;
+        foreach ($fileName as $key => $value) {
+            if (strpos($this->path, $key) !== false) {
+                $found = true;
+                break;
             }
         }
 
-        // Add more attachment configurations as needed...
-
-        if (strpos($path, 'asc2') == true) {
-            $email->addStringAttachment($pdfString, 'bon_commande.pdf');
-        } else {
-            $email->addStringAttachment($pdfString, 'devis.pdf');
+        if (!$found) {
+            $this->email->addStringAttachment($this->subventionString, $this->nomSubvention . '.pdf');
         }
     }
 
 
+    private function attachProcuringMandatIfPathContains(string $fileName, string $mandatString, ?string $attachmentName): void
+    {
+        if (strpos($this->path, $fileName) !== false) {
+            $this->attachMandatIfPresent($mandatString, $attachmentName);
+        }
+    }
+
+    private function attachMandatIfPresent(?string $mandatString, string $fileName): void
+    {
+        if ($mandatString !== null) {
+            $this->email->addStringAttachment($mandatString, $fileName);
+        }
+    }
 
     private function configureEmail(): void
     {
@@ -235,7 +359,6 @@ class EmailSender extends AbstractEmailSender
             $this->configureRecipients();
             $this->confgureHiddenRecipients();
             $this->configureAttachments();
-            //code...
         } catch (\Throwable $th) {
             //throw $th;
         }
