@@ -17,5 +17,7 @@
       "email": "50689325+Mampionona33@users.noreply.github.com"
     }
   ],
-  "require": {}
+  "require": {
+    "phpmailer/phpmailer": "^6.9"
+  }
 }
