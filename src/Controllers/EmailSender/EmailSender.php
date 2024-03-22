@@ -16,7 +16,7 @@ class EmailSender extends AbstractEmailSender
     private $sender_email;
 
     /**
-     * @var string
+     * @var string|null
      */
     private $sender_nom;
 
@@ -30,12 +30,78 @@ class EmailSender extends AbstractEmailSender
      */
     private $path;
 
+    /**
+     * @var bool
+     */
+    private $need_copy_mail;
+
+    /**
+     * @var string|null
+     */
+    private $real_sender_email;
+
+    /**
+     * @var int
+     */
+    private $mandatString_administratif_financier;
+
+    /**
+     * @var int
+     */
+    private $mandatString_administratif;
+
+    /**
+     * @var int
+     */
+    private $mandatString_financier;
+
+
+    /**
+     * @var int
+     */
+    private $mandatString;
 
     public function __construct(string $sender_email, string $recipients, string $path)
     {
         $this->sender_email = $sender_email;
         $this->recipient_email = $recipients;
         $this->path = $path;
+        $this->need_copy_mail = false;
+        $this->real_sender_email = null;
+        $this->mandatString_administratif_financier = 0;
+        $this->mandatString_administratif = 0;
+        $this->mandatString_financier = 0;
+        $this->mandatString = 0;
+    }
+
+    public function setMandatString_administratif_financier(int $mandatString_administratif_financier): void
+    {
+        $this->mandatString_administratif_financier = $mandatString_administratif_financier;
+    }
+
+    public function getMandatString_administratif_financier(): int
+    {
+        return $this->mandatString_administratif_financier;
+    }
+
+    public function setMandatString_administratif(int $mandatString_administratif): void
+    {
+        $this->mandatString_administratif = $mandatString_administratif;
+    }
+
+    public function getMandatString_administratif(): int
+    {
+        return $this->mandatString_administratif;
+    }
+
+    public function setMandatString_financier(int $mandatString_financier): void
+    {
+        $this->mandatString_financier = $mandatString_financier;
+    }
+
+    public function getMandatString_financier(): int
+    {
+        return $this->mandatString_financier;
     }
 
     private function configureSettings(): void
@@ -71,14 +137,18 @@ class EmailSender extends AbstractEmailSender
             $this->email->AddBcc(EMAIL);
         }
 
-        if ($need_copy_mail && isset($_SESSION['user_power']) && ($_SESSION['user_power'] >= 50)) {
-            $this->email->AddBcc($real_sender_email);
+        if ($this->need_copy_mail && $this->real_sender_email && isset($_SESSION['user_power']) && ($_SESSION['user_power'] >= 50)) {
+            $this->email->AddBcc($this->real_sender_email);
         }
 
-        if ($mandatString_administratif_financier == 0 && $mandatString_administratif == 0 && $mandatString_financier == 0) {
-            $mandatString = 0;
+        if (
+            $this->mandatString_administratif_financier === 0
+            && $this->mandatString_administratif === 0
+            && $this->mandatString_financier === 0
+        ) {
+            $this->mandatString = 0;
         } else {
-            $mandatString = 1;
+            $this->mandatString = 1;
         }
     }
 
@@ -97,9 +167,10 @@ class EmailSender extends AbstractEmailSender
         }
     }
 
-    public function send(string $sender_nom): void
+    public function send(string $sender_nom, bool $need_copy_mail): void
     {
         $this->sender_nom = $sender_nom;
+        $this->need_copy_mail = $need_copy_mail;
         $this->configureEmail();
         $this->email->send();
     }
