@@ -250,8 +250,8 @@ class EmailSender extends AbstractEmailSender
     private function configureRecipients(): void
     {
         $this->email->ClearReplyTos();
-        $this->email->addReplyTo($this->sender_email, $this->sender_nom);
-        $this->email->setFrom($this->sender_email, $this->sender_nom);
+        $this->email->addReplyTo($this->sender_email, $this->sender_nom ?? '');
+        $this->email->setFrom($this->sender_email, $this->sender_nom ?? '');
         $this->email->addAddress($this->recipient_email);
     }
 
@@ -262,7 +262,10 @@ class EmailSender extends AbstractEmailSender
 
     private function shouldAddRealSenderEmailToBcc(): bool
     {
-        return $this->need_copy_mail && $this->real_sender_email && isset($_SESSION['user_power']) && ($_SESSION['user_power'] >= 50);
+        if ($this->need_copy_mail && $this->real_sender_email && isset($_SESSION['user_power']) && ($_SESSION['user_power'] >= 50) && $this->real_sender_email !== null) {
+            return true;
+        }
+        return false;
     }
 
 
@@ -273,7 +276,7 @@ class EmailSender extends AbstractEmailSender
         }
 
         if ($this->shouldAddRealSenderEmailToBcc()) {
-            $this->email->AddBcc($this->real_sender_email);
+            $this->email->AddBcc($this->real_sender_email ?? '');
         }
 
         if (
@@ -297,7 +300,7 @@ class EmailSender extends AbstractEmailSender
             $this->attachMandatIfPresent($this->mandatStringAdministratif, 'mandat-administratif.pdf');
             $this->attachMandatIfPresent($this->mandatStringFinancier, 'mandat-financier.pdf');
         } elseif ($this->numMpr2 !== null) {
-            $this->email->addStringAttachment($this->attestationConsentementString, 'Attestation_de_consentement.pdf');
+            $this->attachMandatIfPresent($this->attestationConsentementString, 'Attestation_de_consentement.pdf');
             $this->attachMandatIfPresent($this->mandatStringAdministratifFinancier, 'mandat-administratif-financier.pdf');
             $this->attachMandatIfPresent($this->mandatStringAdministratif, 'mandat-administratif.pdf');
             $this->attachMandatIfPresent($this->mandatStringFinancier, 'mandat-financier.pdf');
@@ -309,7 +312,7 @@ class EmailSender extends AbstractEmailSender
             $this->attachProcuringMandatIfPathContains('ghe', $this->subventionString, 'lettre_fond_solidarite.pdf');
             $this->attachProcuringMandatIfPathContains('doovision', $this->subventionString, 'confirmation-des-aides.pdf');
             $this->attachProcuringMandatIfPathContains('efe', $this->subventionString, 'lettre_confirmation_devis.pdf');
-            $this->attachSubventionIfPathDoesNotContain;
+            $this->attachSubventionIfPathDoesNotContain(['ghe', 'doovision', 'efe']);
         } else {
             // strpos($this->path, 'efe') ? $this->attachMandatIfPresent($this->lettreDevisString, 'lettre_confirmation_devis.pdf') : null;
         }
@@ -317,7 +320,7 @@ class EmailSender extends AbstractEmailSender
 
     /**
      * Undocumented function
-     * @param array<string, mixed> $fileName
+     * @param array<string> $fileName
      * @return void
      */
     private function attachSubventionIfPathDoesNotContain(array $fileName): void
@@ -330,22 +333,22 @@ class EmailSender extends AbstractEmailSender
             }
         }
 
-        if (!$found) {
+        if (!$found && $this->subventionString !== null) {
             $this->email->addStringAttachment($this->subventionString, $this->nomSubvention . '.pdf');
         }
     }
 
 
-    private function attachProcuringMandatIfPathContains(string $fileName, string $mandatString, ?string $attachmentName): void
+    private function attachProcuringMandatIfPathContains(mixed $fileName, mixed $mandatString, mixed $attachmentName): void
     {
-        if (strpos($this->path, $fileName) !== false) {
+        if (strpos($this->path, $fileName) !== false && $mandatString !== null && $attachmentName !== null) {
             $this->attachMandatIfPresent($mandatString, $attachmentName);
         }
     }
 
-    private function attachMandatIfPresent(?string $mandatString, string $fileName): void
+    private function attachMandatIfPresent(mixed $mandatString, mixed $fileName): void
     {
-        if ($mandatString !== null) {
+        if ($mandatString !== null && $fileName !== null) {
             $this->email->addStringAttachment($mandatString, $fileName);
         }
     }
