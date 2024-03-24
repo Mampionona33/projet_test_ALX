@@ -101,6 +101,31 @@ class EmailSender extends AbstractEmailSender
      */
     private $nomSubvention;
 
+    /**
+     * @var string|null
+     */
+    private $pdfDocumentMprString;
+
+    /**
+     * @var string|null
+     */
+    private $nomDocumentMpr;
+
+    /**
+     * @var string|null
+     */
+    private $amoString;
+
+    /**
+     * @var string|null
+     */
+    private $refusamoString;
+
+
+    /**
+     * @var string|null
+     */
+    private $mandatSpecialString;
 
     public function __construct(string $sender_email, string $recipients, string $path)
     {
@@ -121,6 +146,61 @@ class EmailSender extends AbstractEmailSender
         $this->isSubvention = false;
         $this->subventionString = null;
         $this->nomSubvention = null;
+        $this->pdfDocumentMprString = null;
+        $this->nomDocumentMpr = null;
+        $this->amoString = null;
+        $this->refusamoString = null;
+        $this->mandatSpecialString = null;
+    }
+
+    public function setMandatSpecialString(string $mandatSpecialString): void
+    {
+        $this->mandatSpecialString = $mandatSpecialString;
+    }
+
+    public function getMandatSpecialString(): string|null
+    {
+        return $this->mandatSpecialString;
+    }
+
+    public function setRefusamoString(string $refusamoString): void
+    {
+        $this->refusamoString = $refusamoString;
+    }
+
+    public function getRefusamoString(): string|null
+    {
+        return $this->refusamoString;
+    }
+
+    public function setAmoString(): void
+    {
+        $this->amoString = $this->amoString;
+    }
+
+    public function getAmoString(): string|null
+    {
+        return $this->amoString;
+    }
+
+    public function setNomDocumentMpr(string $nomDocumentMpr): void
+    {
+        $this->nomDocumentMpr = $nomDocumentMpr;
+    }
+
+    public function getNomDocumentMpr(): string|null
+    {
+        return $this->nomDocumentMpr;
+    }
+
+    public function setPdfDocumentMprString(): void
+    {
+        $this->pdfDocumentMprString = $this->pdfDocumentMprString;
+    }
+
+    public function getPdfDocumentMprString(): string|null
+    {
+        return $this->pdfDocumentMprString;
     }
 
     public function setNomSubvention(string $sender_nom): void
@@ -343,6 +423,10 @@ class EmailSender extends AbstractEmailSender
             $this->attachCertificatPV($this->path);
             $this->attachAssuranceDecennale($this->path);
         }
+        $this->attachMandatIfPresent($this->pdfDocumentMprString, $this->nomDocumentMpr . '.pdf');
+        $this->attachMandatIfPresent($this->amoString, 'contrat_amo.pdf');
+        $this->attachMandatIfPresent($this->refusamoString, 'refus_amo.pdf');
+        $this->attachMandatIfPresent($this->mandatSpecialString, 'refus_amo.pdf');
     }
 
     /**
