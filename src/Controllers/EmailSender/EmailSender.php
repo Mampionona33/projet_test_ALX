@@ -298,17 +298,22 @@ class EmailSender extends AbstractEmailSender
     private function attachCertificatPV(string $path): void
     {
         $certificat_pv = $path . "/espace-rac/upload/certificats/certificatPV.pdf";
-        $certificatString = file_get_contents($certificat_pv);
-        $this->email->addStringAttachment($certificatString, 'Certificat PV.pdf');
+        $this->addStringAttacmentByFileGetContent($certificat_pv);
     }
 
     private function attachAssuranceDecennale(string $path): void
     {
         $assurance_decennale = $path . "/espace-rac/upload/certificats/Assurance_decennale.pdf";
-        $assurance_decennaleString = file_get_contents($assurance_decennale);
-        $this->email->addStringAttachment($assurance_decennaleString, 'Assurance decennale.pdf');
+        $this->addStringAttacmentByFileGetContent($assurance_decennale);
     }
 
+    private function addStringAttacmentByFileGetContent(string $path): void
+    {
+        $content = file_get_contents($path);
+        if ($content !== false) {
+            $this->email->addStringAttachment($content, basename($path));
+        }
+    }
 
     private function configureAttachments(): void
     {
@@ -336,6 +341,7 @@ class EmailSender extends AbstractEmailSender
         }
         if ($this->shouldAttachCertificatPV($this->path)) {
             $this->attachCertificatPV($this->path);
+            $this->attachAssuranceDecennale($this->path);
         }
     }
 
