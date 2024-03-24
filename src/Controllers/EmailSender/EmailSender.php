@@ -306,7 +306,7 @@ class EmailSender extends AbstractEmailSender
             $this->attachMandatIfPresent($this->mandatStringFinancier, 'mandat-financier.pdf');
         }
 
-        strpos($this->path, 'futurenv') ? $this->attachMandatIfPresent($this->procurationString, 'Procuration.pdf') : null;
+        $this->attachProcuringMandatIfPathContains('futurenv', $this->procurationString, 'Procuration.pdf');
 
         if ($this->isSubvention) {
             $this->attachProcuringMandatIfPathContains('ghe', $this->subventionString, 'lettre_fond_solidarite.pdf');
