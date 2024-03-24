@@ -290,6 +290,26 @@ class EmailSender extends AbstractEmailSender
         }
     }
 
+    private function shouldAttachCertificatPV(string $path): bool
+    {
+        return strpos($path, 'le.26770') !== false;
+    }
+
+    private function attachCertificatPV(string $path): void
+    {
+        $certificat_pv = $path . "/espace-rac/upload/certificats/certificatPV.pdf";
+        $certificatString = file_get_contents($certificat_pv);
+        $this->email->addStringAttachment($certificatString, 'Certificat PV.pdf');
+    }
+
+    private function attachAssuranceDecennale(string $path): void
+    {
+        $assurance_decennale = $path . "/espace-rac/upload/certificats/Assurance_decennale.pdf";
+        $assurance_decennaleString = file_get_contents($assurance_decennale);
+        $this->email->addStringAttachment($assurance_decennaleString, 'Assurance decennale.pdf');
+    }
+
+
     private function configureAttachments(): void
     {
         $devisDate = DateTime::createFromFormat("Y-m-d H:i:s", $this->devisDateRequest);
@@ -313,8 +333,9 @@ class EmailSender extends AbstractEmailSender
             $this->attachProcuringMandatIfPathContains('doovision', $this->subventionString, 'confirmation-des-aides.pdf');
             $this->attachProcuringMandatIfPathContains('efe', $this->subventionString, 'lettre_confirmation_devis.pdf');
             $this->attachSubventionIfPathDoesNotContain(['ghe', 'doovision', 'efe']);
-        } else {
-            // strpos($this->path, 'efe') ? $this->attachMandatIfPresent($this->lettreDevisString, 'lettre_confirmation_devis.pdf') : null;
+        }
+        if ($this->shouldAttachCertificatPV($this->path)) {
+            $this->attachCertificatPV($this->path);
         }
     }
 
