@@ -127,6 +127,16 @@ class EmailSender extends AbstractEmailSender
      */
     private $mandatSpecialString;
 
+    /**
+     * @var string|null
+     */
+    private $mandat1Asc2String;
+
+    /**
+     * @var string|null
+     */
+    private $mandat2Asc2String;
+
     public function __construct(string $sender_email, string $recipients, string $path)
     {
         $this->sender_email = $sender_email;
@@ -151,6 +161,18 @@ class EmailSender extends AbstractEmailSender
         $this->amoString = null;
         $this->refusamoString = null;
         $this->mandatSpecialString = null;
+        $this->mandat1Asc2String = null;
+        $this->mandat2Asc2String = null;
+    }
+
+    public function setMandat1Asc2String(string $mandat1Asc2String): void
+    {
+        $this->mandat1Asc2String = $mandat1Asc2String;
+    }
+
+    public function getMandat1Asc2String(): string|null
+    {
+        return $this->mandat1Asc2String;
     }
 
     public function setMandatSpecialString(string $mandatSpecialString): void
@@ -383,15 +405,19 @@ class EmailSender extends AbstractEmailSender
 
     private function attachAssuranceDecennale(string $path): void
     {
-        $assurance_decennale = $path . "/espace-rac/upload/certificats/Assurance_decennale.pdf";
-        $this->addStringAttacmentByFileGetContent($assurance_decennale);
+        $this->attachFileToEmail($path);
     }
 
     private function addStringAttacmentByFileGetContent(string $path): void
     {
-        $content = file_get_contents($path);
+        $this->attachFileToEmail($path);
+    }
+
+    private function attachFileToEmail(string $filePath): void
+    {
+        $content = file_get_contents($filePath);
         if ($content !== false) {
-            $this->email->addStringAttachment($content, basename($path));
+            $this->email->addStringAttachment($content, basename($filePath));
         }
     }
 
@@ -426,7 +452,9 @@ class EmailSender extends AbstractEmailSender
         $this->attachMandatIfPresent($this->pdfDocumentMprString, $this->nomDocumentMpr . '.pdf');
         $this->attachMandatIfPresent($this->amoString, 'contrat_amo.pdf');
         $this->attachMandatIfPresent($this->refusamoString, 'refus_amo.pdf');
-        $this->attachMandatIfPresent($this->mandatSpecialString, 'refus_amo.pdf');
+        $this->attachMandatIfPresent($this->mandatSpecialString, 'mandat_special.pdf');
+        $this->attachMandatIfPresent($this->mandat1Asc2String, 'mandat_representation.pdf');
+        $this->attachMandatIfPresent($this->mandat2Asc2String, 'mandat_special.pdf');
     }
 
     /**
