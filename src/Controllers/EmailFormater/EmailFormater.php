@@ -600,4 +600,41 @@ class EmailFormater
             $this->email->addStringAttachment($this->subventionString, $this->nomSubvention . '.pdf');
         }
     }
+
+    /**
+     * Attache un mandat si la clé spécifiée dans le tableau n'est pas contenue dans le chemin.
+     *
+     * @param array $dataArray Le tableau contenant les données à parcourir
+     * @param string $keyName La clé du tableau dont la valeur sera utilisée comme mandat à attacher
+     * @param string $attachmentName Le nom de la pièce jointe à attacher
+     * @param string $path Le chemin de base pour construire le chemin complet du fichier à attacher
+     * @param string $folder Le dossier dans lequel se trouvent les fichiers à attacher
+     * @param string $subFolder Le sous-dossier dans lequel se trouvent les fichiers à attacher
+     * 
+     * @return void
+     * 
+     * @throws \Exception Si le chemin n'est pas défini ou si le nom du fichier ou de la pièce jointe est vide
+     */
+    private function attachMandatIfKeyNotInPath(array $dataArray, string $keyName, string $attachmentName, string $path, string $folder, string $subFolder): void
+    {
+        $this->noPathThrowerException();
+
+        if (empty($attachmentName)) {
+            throw new \Exception('Le nom de la pièce jointe ne peut pas être vide.');
+        }
+
+        if (empty($dataArray)) {
+            throw new \Exception('Le tableau ne peut pas être vide.');
+        }
+
+        foreach ($dataArray as $data) {
+            if (!empty($data[$keyName])) {
+                if (strpos($this->path, $data[$keyName]) === false) {
+                    $file_to_attach = $path . '/' . $folder . '/' . $subFolder . '/' . $data[$keyName];
+                    $this->email->addAttachment($file_to_attach, $attachmentName);
+                    break;
+                }
+            }
+        }
+    }
 }
