@@ -155,6 +155,11 @@ class EmailFormater
      */
     private $pdfString;
 
+    /**
+     * @var array<int|string, array<string, mixed>>|null
+     */
+    private $ficheTechs;
+
     public function __construct(string $sender_email, string $devisDateRequest)
     {
         $this->email = new PHPMailer();
@@ -176,6 +181,21 @@ class EmailFormater
     public function getDocLeaderString(): string|null
     {
         return $this->docLeaderString;
+    }
+
+    /**
+     * @param array<int|string, array<string, mixed>>|null $ficheTechs
+     */
+    public function setFicheTechs(array|null $ficheTechs): void
+    {
+        $this->ficheTechs = $ficheTechs;
+    }
+    /**
+     * @return array<int|string, array<string, mixed>>|null
+     */
+    public function getFicheTechs()
+    {
+        return $this->ficheTechs;
     }
 
     public function setPdfString(string|null $pdfString): void
@@ -498,6 +518,8 @@ class EmailFormater
 
         $this->attachProcuringMandatIfPathContains('asc2', $this->pdfString ?? '', 'bon_commande.pdf');
         $this->attachProcuringMandatIfPathDoesNotContain('asc2', $this->pdfString ?? '', 'devis.pdf');
+
+        $this->attachMandatIfKeyNotInPath($this->ficheTechs ?? [], 'nom_unique', '.pdf', $this->path, 'upload', 'fiches_techniques');
     }
 
     /**
@@ -604,7 +626,7 @@ class EmailFormater
     /**
      * Attache un mandat si la clé spécifiée dans le tableau n'est pas contenue dans le chemin.
      *
-     * @param array $dataArray Le tableau contenant les données à parcourir
+     * @param array<mixed, array<string, mixed>> $dataArray Le tableau contenant les données à parcourir
      * @param string $keyName La clé du tableau dont la valeur sera utilisée comme mandat à attacher
      * @param string $attachmentName Le nom de la pièce jointe à attacher
      * @param string $path Le chemin de base pour construire le chemin complet du fichier à attacher
