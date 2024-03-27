@@ -520,6 +520,8 @@ class EmailFormater
         $this->attachProcuringMandatIfPathDoesNotContain('asc2', $this->pdfString ?? '', 'devis.pdf');
 
         $this->attachMandatIfKeyNotInPath($this->ficheTechs ?? [], 'nom_unique', '.pdf', $this->path, 'upload', 'fiches_techniques');
+
+        $this->attacheGetContent($this->path . "/espace-rac/" . 'upload/SIBEL-PLAQUETTE-PAC.pdf', 'sibel-energie', 'SIBEL-PLAQUETTE-PAC.pdf');
     }
 
     /**
@@ -656,6 +658,39 @@ class EmailFormater
                     $this->email->addAttachment($file_to_attach, $attachmentName);
                     break;
                 }
+            }
+        }
+    }
+
+    /**
+     * Attache le contenu d'un fichier au courriel si le nom de fichier est trouvé dans le chemin.
+     *
+     * @param string $path Le chemin du fichier
+     * @param string $fileName Le nom du fichier à rechercher dans le chemin
+     * @param string $attachmentName Le nom de la pièce jointe à utiliser dans le courriel
+     * 
+     * @return void
+     * 
+     * @throws \Exception Si le nom de la pièce jointe ou le chemin est vide, ou si la lecture du fichier échoue
+     */
+    private function attacheGetContent(string $path, string $fileName, string $attachmentName): void
+    {
+        $this->noPathThrowerException();
+
+        if (empty($attachmentName)) {
+            throw new \Exception('Le nom de la pièce jointe ne peut pas être vide.');
+        }
+
+        if (empty($path)) {
+            throw new \Exception('Le chemin ne peut pas être vide.');
+        }
+
+        if (strpos($path, $fileName) !== false) {
+            $fileContent = file_get_contents($path);
+            if ($fileContent !== false) {
+                $this->email->addStringAttachment((string)$fileContent, $attachmentName);
+            } else {
+                throw new \Exception('Impossible de lire le contenu du fichier.');
             }
         }
     }
