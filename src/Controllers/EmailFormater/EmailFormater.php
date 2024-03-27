@@ -135,6 +135,26 @@ class EmailFormater
      */
     private $mandatSibel1String;
 
+    /**
+     * @var string|null
+     */
+    private $mandatSibel2String;
+
+    /**
+     * @var string|null
+     */
+    private $mandatSibel3String;
+
+    /**
+     * @var string|null
+     */
+    private $docLeaderString;
+
+    /**
+     * @var string|null
+     */
+    private $pdfString;
+
     public function __construct(string $sender_email, string $devisDateRequest)
     {
         $this->email = new PHPMailer();
@@ -149,6 +169,24 @@ class EmailFormater
     /**
      * Setter and getter
      */
+    public function setDocLeaderString(string|null $docLeaderString): void
+    {
+        $this->docLeaderString = $docLeaderString;
+    }
+    public function getDocLeaderString(): string|null
+    {
+        return $this->docLeaderString;
+    }
+
+    public function setPdfString(string|null $pdfString): void
+    {
+        $this->pdfString = $pdfString;
+    }
+    public function getPdfString(): string|null
+    {
+        return $this->pdfString;
+    }
+
     public function setMandatSibel1String(string|null $mandatSibel1String): void
     {
         $this->mandatSibel1String = $mandatSibel1String;
@@ -156,6 +194,24 @@ class EmailFormater
     public function getMandatSibel1String(): string|null
     {
         return $this->mandatSibel1String;
+    }
+
+    public function setMandatSibel2String(string|null $mandatSibel2String): void
+    {
+        $this->mandatSibel2String = $mandatSibel2String;
+    }
+    public function getMandatSibel2String(): string|null
+    {
+        return $this->mandatSibel2String;
+    }
+
+    public function setMandatSibel3String(string|null $mandatSibel3String): void
+    {
+        $this->mandatSibel3String = $mandatSibel3String;
+    }
+    public function getMandatSibel3String(): string|null
+    {
+        return $this->mandatSibel3String;
     }
 
     public function setCcString(string|null $ccString): void
@@ -435,7 +491,13 @@ class EmailFormater
         $this->attachMandatIfPresent($this->ccString, 'cadre_contribution.pdf');
 
 
-        $this->attachProcuringMandatIfPathContains('leader-energie', $this->mandatSibel1String ?? '', 'Mandat_Gestionnaire_de_reseau.pdf');
+        $this->attachProcuringMandatIfPathContains('leader-energie', $this->docLeaderString ?? '', 'document_eco_energy.pdf');
+        $this->attachProcuringMandatIfPathContains('sibel-energie', $this->mandatSibel1String ?? '', 'Mandat_Gestionnaire_de_reseau.pdf');
+        $this->attachProcuringMandatIfPathContains('sibel-energie', $this->mandatSibel2String ?? '', 'Mandat_de_demarches_primes_CEE.pdf');
+        $this->attachProcuringMandatIfPathContains('sibel-energie', $this->mandatSibel3String ?? '', 'Mandat_dassistance_administrative_(urbanisme_Consuel).pdf');
+
+        $this->attachProcuringMandatIfPathContains('asc2', $this->pdfString ?? '', 'bon_commande.pdf');
+        $this->attachProcuringMandatIfPathDoesNotContain('asc2', $this->pdfString ?? '', 'devis.pdf');
     }
 
     /**
@@ -493,6 +555,31 @@ class EmailFormater
             $this->attachMandatIfPresent($mandatString, $attachmentName);
         }
     }
+
+    /**
+     * Attache un mandat de procuration si le chemin ne contient pas un mot spécifique
+     *
+     * @param string $fileName Le nom du fichier à rechercher dans le chemin
+     * @param string $mandatString La chaîne représentant le mandat à attacher
+     * @param string $attachmentName Le nom de la pièce jointe à attacher
+     * 
+     * @return void
+     * 
+     * @throws \Exception Si le chemin n'est pas défini ou si le nom du fichier ou de la pièce jointe est vide
+     */
+    private function attachProcuringMandatIfPathDoesNotContain(string $fileName, string $mandatString = '', string $attachmentName = ''): void
+    {
+        $this->noPathThrowerException();
+
+        if (empty($mandatString) || empty($attachmentName)) {
+            throw new \Exception('Le nom du fichier ou le nom de la pièce jointe ne peut pas être vide.');
+        }
+
+        if (strpos($this->path, $fileName) === false) {
+            $this->attachMandatIfPresent($mandatString, $attachmentName);
+        }
+    }
+
 
     /**
      * Undocumented function
