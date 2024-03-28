@@ -160,6 +160,11 @@ class EmailFormater
      */
     private $ficheTechs;
 
+    /**
+     * Constructor
+     * @param string $sender_email
+     * @param string $devisDateRequest
+     */
     public function __construct(string $sender_email, string $devisDateRequest)
     {
         $this->email = new PHPMailer();
@@ -522,6 +527,16 @@ class EmailFormater
         $this->attachMandatIfKeyNotInPath($this->ficheTechs ?? [], 'nom_unique', '.pdf', $this->path, 'upload', 'fiches_techniques');
 
         $this->attacheGetContent($this->path . "/espace-rac/" . 'upload/SIBEL-PLAQUETTE-PAC.pdf', 'sibel-energie', 'SIBEL-PLAQUETTE-PAC.pdf');
+    }
+
+    /**
+     * Setup content
+     */
+    public function setupContent(): void
+    {
+        $this->email->isHTML(true);
+        $this->email->Subject = $this->subject;
+        $this->email->Body = $this->body;
     }
 
     /**

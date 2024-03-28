@@ -1,0 +1,67 @@
+{% if mandatString %}
+
+	<p>
+		Je vous prie de bien vouloir trouver votre
+		<strong>mandat</strong>
+		qui devra être signé par vos soins (en cliquant sur le lien en fin de mail), nous permettant d'effectuer en votre nom et pour votre compte les démarches administratives, afin d'obtenir les différentes aides annoncées.
+	</p>
+	<p>
+		Vous trouverez également le
+		<strong>devis</strong>
+		qui devra être signé par vos soins (en cliquant sur le lien en fin de mail).
+	</p>
+
+	{% if need_cc %}
+		<p>
+			Le devis est accompagné du cadre de contribution que nous vous joignons à titre d'informations. Ce document indique le montant des aides liés aux certificats d'économies d'énergies (CEE).
+		</p>
+	{% endif %}
+
+{% else %}
+	<p>Je vous prie de bien vouloir trouver votre
+		<strong>devis</strong>
+		qui devra être signé par vos soins (en cliquant sur le lien en fin de mail).</p>
+	{% if ccString %}
+		<p>Le devis est accompagné du cadre de contribution que nous vous joignons à titre d'informations. Ce document indique le montant des aides liés aux certificats d'économies d'énergies (CEE).</p>
+	{% endif %}
+	<p>Ainsi que l'attestation simplifiée pour la TVA applicable aux travaux dans les logements (Cerfa n° 13948*05) qui devra aussi être signée.</p>
+{% endif %}
+
+{% if is_subvention %}
+	<p>Veuillez également trouver en pièce jointe votre fiche de " . $nom_subvention . " pour pouvoir bénéficier de la remise qui vous a été accordée, il vous suffit pour cela de signer ce document le jour de l’installation.</p>
+{% endif %}
+
+{% if cpt_fichetech > 0 and link_fichetech %}
+	{% set complement = '.<br /><br />' %}
+	{% set egalement = (cpt_fichetech > 0) ? 'également ' : '' %}
+	{% if cpt_linkfichetech == 1 %}
+		{% set complement = ' que vous pourrez ' ~ egalement ~ 'trouver via le lien ci dessous : ' %}
+	{% else %}
+		{% set complement = ' que vous pourrez ' ~ egalement ~ 'trouver via les liens ci dessous : ' %}
+	{% endif %}
+	{% set complement = complement ~ '<br/>' ~ print_array(link_fichetech, 0) %}
+	{% if cpt_fichetech == 1 %}
+		{{ "Enfin, nous joignons à ce courriel la <strong>plaquette</strong> du produit choisi reprenant la totalité des caractéristiques techniques et fonctionnelles" ~ complement }}
+	{% else %}
+		{{ "Enfin, nous joignons à ce courriel les <strong>plaquettes</strong> des produits choisis reprenant la totalité des caractéristiques techniques et fonctionnelles" ~ complement }}
+	{% endif %}
+{% endif %}
+
+<p>En cas de besoin ou pour toutes éventuelles questions, merci de nous contacter par téléphone au
+	<strong>
+		{{body_tel}}</strong>
+	ou par mail à
+	{{$body_email}}, un technicien ne manquera pas de répondre à vos questions dans les meilleurs délais.</p>
+<p>Nous espérons que ce petit courriel explicatif vous donnera entière satisfaction et nous vous assurons mettre tout en œuvre pour que votre futur projet puisse devenir réalité.</p>
+
+<center>
+	<table>
+		<tr>
+			<td align="center" bgcolor="#FFFFFF" class="appleLinkBodyTxt" style="padding:5px 0px 15px 0px; font-family:Helvetica, Arial, sans-serif; font-size:16px; line-height:20px; font-weight:normal;" valign="top">
+				<a href={{signature_url}} style="background-color: #cce5ff;border: 1px solid #004085;border-radius:4px;color: #004085;display:inline-block;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:300px;-webkit-text-size-adjust:none;mso-hide:all;">Cliquer ici pour Signer les Documents</a>
+			</td>
+		</tr>
+	</table>
+	<p>Ou copier/coller le lien ci-dessous :
+		<br/>{{signature_url}}</p>
+</center>

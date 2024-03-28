@@ -1,0 +1,20 @@
+{% if recipient_gender_nom_prenom %}
+	<p>
+		{{recipient_gender_nom_prenom}}
+	</p>
+	<p>Je vous prie de bien vouloir trouver ci-joint le devis</p>
+	<p>En cas de besoin ou pour toutes éventuelles questions, merci de nous contacter par téléphone au " . $tel_body . " ou par mail à " . $email_body . ", un technicien ne manquera pas de répondre à vos questions dans les meilleurs délais.</p>
+
+	<center>
+		<table>
+			<tr>
+				<td align="center" bgcolor="#FFFFFF" class="appleLinkBodyTxt" style="padding:5px 0px 15px 0px; font-family:Helvetica, Arial, sans-serif; font-size:16px; line-height:20px; font-weight:normal;" valign="top">
+					<a href={{signature_url}} style="background-color: #cce5ff;border: 1px solid #004085;border-radius:4px;color: #004085;display:inline-block;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:300px;-webkit-text-size-adjust:none;mso-hide:all;">Cliquer ici pour Signer les Documents</a>
+				</td>
+			</tr>
+		</table>
+		<p>Ou copier/coller le lien ci-dessous :
+			{{signature_url}}</p>
+	</center>
+
+{% endif %}
